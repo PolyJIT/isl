@@ -62,6 +62,7 @@ void isl_flow_free(__isl_take isl_flow *deps);
 
 isl_ctx *isl_flow_get_ctx(__isl_keep isl_flow *deps);
 
+__isl_export
 int isl_union_map_compute_flow(__isl_take isl_union_map *sink,
 	__isl_take isl_union_map *must_source,
 	__isl_take isl_union_map *may_source,
