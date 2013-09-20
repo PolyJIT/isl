@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = nostdinc
 
 noinst_PROGRAMS = extract_interface
 
-AM_CXXFLAGS = $(CLANG_CXXFLAGS)
+AM_CXXFLAGS = $(CLANG_CXXFLAGS) -fno-rtti
 AM_LDFLAGS = $(CLANG_LDFLAGS)
 
 includes = -I$(top_builddir) -I$(top_srcdir) \
