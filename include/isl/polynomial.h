@@ -125,6 +125,7 @@ __isl_give isl_qpolynomial *isl_qpolynomial_from_aff(__isl_take isl_aff *aff);
 __isl_give isl_basic_map *isl_basic_map_from_qpolynomial(
 	__isl_take isl_qpolynomial *qp);
 
+__isl_export
 __isl_give isl_printer *isl_printer_print_qpolynomial(
 	__isl_take isl_printer *p, __isl_keep isl_qpolynomial *qp);
 void isl_qpolynomial_print(__isl_keep isl_qpolynomial *qp, FILE *out,
@@ -235,6 +236,7 @@ __isl_give isl_pw_qpolynomial *isl_pw_qpolynomial_read_from_str(isl_ctx *ctx,
 		const char *str);
 __isl_give isl_pw_qpolynomial *isl_pw_qpolynomial_read_from_file(isl_ctx *ctx,
 		FILE *input);
+__isl_export
 __isl_give isl_printer *isl_printer_print_pw_qpolynomial(
 	__isl_take isl_printer *p, __isl_keep isl_pw_qpolynomial *pwqp);
 void isl_pw_qpolynomial_print(__isl_keep isl_pw_qpolynomial *pwqp, FILE *out,
@@ -302,6 +304,7 @@ int isl_qpolynomial_fold_foreach_qpolynomial(
 	__isl_keep isl_qpolynomial_fold *fold,
 	int (*fn)(__isl_take isl_qpolynomial *qp, void *user), void *user);
 
+__isl_export
 __isl_give isl_printer *isl_printer_print_qpolynomial_fold(
 	__isl_take isl_printer *p, __isl_keep isl_qpolynomial_fold *fold);
 void isl_qpolynomial_fold_print(__isl_keep isl_qpolynomial_fold *fold, FILE *out,
@@ -389,6 +392,7 @@ int isl_pw_qpolynomial_fold_foreach_lifted_piece(
 	int (*fn)(__isl_take isl_set *set, __isl_take isl_qpolynomial_fold *fold,
 		    void *user), void *user);
 
+__isl_export
 __isl_give isl_printer *isl_printer_print_pw_qpolynomial_fold(
 	__isl_take isl_printer *p, __isl_keep isl_pw_qpolynomial_fold *pwf);
 void isl_pw_qpolynomial_fold_print(__isl_keep isl_pw_qpolynomial_fold *pwf,
@@ -489,6 +493,7 @@ int isl_union_pw_qpolynomial_foreach_pw_qpolynomial(
 __isl_give isl_pw_qpolynomial *isl_union_pw_qpolynomial_extract_pw_qpolynomial(
 	__isl_keep isl_union_pw_qpolynomial *upwqp, __isl_take isl_space *dim);
 
+__isl_export
 __isl_give isl_printer *isl_printer_print_union_pw_qpolynomial(
 	__isl_take isl_printer *p, __isl_keep isl_union_pw_qpolynomial *upwqp);
 
@@ -560,6 +565,7 @@ int isl_union_pw_qpolynomial_fold_foreach_pw_qpolynomial_fold(
 __isl_give isl_pw_qpolynomial_fold *isl_union_pw_qpolynomial_fold_extract_pw_qpolynomial_fold(
 	__isl_keep isl_union_pw_qpolynomial_fold *upwf, __isl_take isl_space *dim);
 
+__isl_export
 __isl_give isl_printer *isl_printer_print_union_pw_qpolynomial_fold(
 	__isl_take isl_printer *p,
 	__isl_keep isl_union_pw_qpolynomial_fold *upwf);

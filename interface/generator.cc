@@ -339,3 +339,21 @@ bool generator::is_isl_class(QualType type) {
 bool generator::is_isl_type(QualType type) {
 	return is_isl_class(type) || is_isl_enum(type);
 }
+
+bool generator::can_be_printed(const isl_class &clazz) const {
+	map<string,isl_class>::const_iterator it = classes.find("isl_printer");
+	if (it == classes.end())
+		return false;
+
+	const string print_method = string("isl_printer_print") + clazz.name.substr(3);
+
+	const set<FunctionDecl *> &s = it->second.methods;
+	set<FunctionDecl *>::const_iterator fit, fend = s.end();
+	for (fit=s.begin(); fit!=fend; ++fit) {
+		FunctionDecl *f = *fit;
+		if (f->getName() == print_method)
+			return true;
+	}
+
+	return false;
+}
