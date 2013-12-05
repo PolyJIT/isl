@@ -46,6 +46,34 @@ static string type2python(string name)
 	return name.substr(4);
 }
 
+/* Print python class for an isl enum type.
+ */
+void python_generator::print_enum(const isl_enum &enu)
+{
+	string enum_name_str = type2python(enu.name);
+	const char *enum_name = enum_name_str.c_str();
+
+	printf("class %s:\n", enum_name);
+	printf("    def __init__(self,name,value):\n");
+	printf("        self.name  = name\n");
+	printf("        self.value = value\n");
+	printf("    def __str__(self):\n");
+	printf("        return self.name\n");
+	printf("    def __repr__(self):\n");
+	printf("        return \"<isl.%s.%%s: %%d>\" %% "
+	       "(self.name, self.value)\n", enum_name);
+	printf("\n");
+
+	map<string,int>::const_iterator it, e = enu.values.end();
+	for (it	= enu.values.begin(); it != e; ++it) {
+		string name_str = type2python(it->first);
+		const char *name = name_str.c_str();
+		printf("%s.%s = %s(\"%s\",%d)\n", enum_name, name,
+		       enum_name, name, it->second);
+	}
+	printf("\n");
+}
+
 /* Construct a wrapper for a callback argument (at position "arg").
  * Assign the wrapper to "cb".  We assume here that a function call
  * has at most one callback argument.
@@ -173,23 +201,33 @@ void python_generator::print_method(const isl_class &clazz, FunctionDecl *method
 	for (int i = 1; i < num_params - drop_user; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		QualType type = param->getOriginalType();
-		if (is_callback(type))
+		if (is_isl_enum(type))
+			printf(", arg%d.value", i);
+		else if (is_callback(type))
 			printf(", cb");
-		else if (takes(param)) {
-			string type_s = extract_type(type);
-			printf(", isl.%s_copy(arg%d.ptr)", type_s.c_str(), i);
+		else if (is_isl_class(type)) {
+			if (takes(param)) {
+				string type_s = extract_type(type);
+				printf(", isl.%s_copy(arg%d.ptr)", type_s.c_str(), i);
+			} else
+				printf(", arg%d.ptr", i);
 		} else
-			printf(", arg%d.ptr", i);
+			printf(", arg%d", i);
 	}
 	if (drop_user)
 		printf(", None");
 	printf(")\n");
 
-	if (is_isl_type(method->getReturnType())) {
+	QualType rettype = method->getReturnType();
+	if (is_isl_class(rettype)) {
 		string type;
 		type = type2python(extract_type(method->getReturnType()));
 		printf("        return %s(ctx=arg0.ctx, ptr=res)\n",
 			type.c_str());
+	} else if (is_string(rettype)) {
+		printf("        strres = str(cast(res, c_char_p).value)\n");
+		printf("        libc.free(res)\n");
+		printf("        return strres\n");
 	} else {
 		if (drop_user) {
 			printf("        if exc_info[0] != None:\n");
@@ -219,14 +257,16 @@ void python_generator::print_constructor(const isl_class &clazz, FunctionDecl *c
 	printf("        if len(args) == %d", num_params - drop_ctx);
 	for (int i = drop_ctx; i < num_params; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
-		if (is_isl_type(param->getOriginalType())) {
+		QualType ty = param->getOriginalType();
+		if (is_isl_type(ty)) {
 			string type;
 			type = extract_type(param->getOriginalType());
 			type = type2python(type);
 			printf(" and args[%d].__class__ is %s",
 				i - drop_ctx, type.c_str());
 		} else
-			printf(" and type(args[%d]) == str", i - drop_ctx);
+			printf(" and type(args[%d]) == %s", i - drop_ctx,
+			       is_string(ty) ? "str" : "int");
 	}
 	printf(":\n");
 	printf("            self.ctx = Context.getDefaultInstance()\n");
@@ -237,15 +277,18 @@ void python_generator::print_constructor(const isl_class &clazz, FunctionDecl *c
 		ParmVarDecl *param = cons->getParamDecl(i);
 		if (i)
 			printf(", ");
-		if (is_isl_type(param->getOriginalType())) {
+		QualType ty = param->getOriginalType();
+		if (is_isl_class(ty)) {
 			if (takes(param)) {
 				string type;
-				type = extract_type(param->getOriginalType());
+				type = extract_type(ty);
 				printf("isl.%s_copy(args[%d].ptr)",
 				       type.c_str(), i - drop_ctx);
 			} else
 				printf("args[%d].ptr", i - drop_ctx);
-		} else
+		} else if (is_isl_enum(ty))
+			printf("args[%d].value", i - drop_ctx);
+		else
 			printf("args[%d]", i - drop_ctx);
 	}
 	printf(")\n");
@@ -332,8 +375,12 @@ void python_generator::print(const isl_class &clazz)
 	}
 	for (in = clazz.methods.begin(); in != clazz.methods.end(); ++in) {
 		string fullname = (*in)->getName();
-		if (is_isl_type((*in)->getReturnType()))
+		QualType type = (*in)->getReturnType();
+		if (is_isl_type(type))
 			printf("isl.%s.restype = c_void_p\n", fullname.c_str());
+		else if (is_string(type))
+			printf("isl.%s.restype = POINTER(c_char)\n", fullname.c_str());
+
 	}
 	printf("isl.%s_free.argtypes = [c_void_p]\n", name.c_str());
 	printf("isl.%s_to_str.argtypes = [c_void_p]\n", name.c_str());
@@ -353,8 +400,12 @@ python_generator::python_generator(set<RecordDecl *> &types, set<FunctionDecl *>
  */
 void python_generator::generate()
 {
+	map<string, isl_enum>::const_iterator ei;
 	map<string, isl_class>::iterator ci;
 	done.clear();
+
+	for (ei = enums.begin(); ei != enums.end(); ++ei)
+		print_enum(ei->second);
 
 	for (ci = classes.begin(); ci != classes.end(); ++ci) {
 		if (done.find(ci->first) == done.end())
