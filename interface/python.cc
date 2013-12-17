@@ -340,8 +340,9 @@ void python_generator::print(const isl_class &clazz)
 	printf("isl.%s_to_str.restype = POINTER(c_char)\n", name.c_str());
 }
 
-python_generator::python_generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions)
-	: generator(types, functions), os(outputfile("isl.py"))
+python_generator::python_generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
+                                   set<EnumDecl *> &enums)
+    : generator(types, functions, enums), os(outputfile("isl.py"))
 {
 }
 

@@ -41,7 +41,8 @@
 /* Collect all functions that belong to a certain type,
  * separating constructors from regular methods.
  */
-generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions)
+generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
+		     set<EnumDecl *> &enums)
 {
 	set<RecordDecl *>::iterator it;
 	for (it = types.begin(); it != types.end(); ++it) {
@@ -58,6 +59,18 @@ generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions)
 			c.constructors.insert(*in);
 		else
 			c.methods.insert(*in);
+	}
+
+	set<EnumDecl *>::const_iterator ie;
+	for (ie = enums.begin(); ie != enums.end(); ++ie) {
+		const EnumDecl *edecl = *ie;
+		const string name = edecl->getName();
+		this->enums[name].name = name;
+		EnumDecl::enumerator_iterator vi;
+		for (vi = edecl->enumerator_begin(); vi != edecl->enumerator_end(); ++vi) {
+			const EnumConstantDecl *ecd = *vi;
+			this->enums[name].values[ecd->getNameAsString()] = ecd->getInitVal().getSExtValue();
+		}
 	}
 }
 
@@ -164,6 +177,10 @@ isl_class &generator::method2class(map<string, isl_class> &classes,
 			best = ci->first;
 	}
 
+	if (best.length() == 0)
+		cerr << "Cannot find class for method '" << name << "'." << endl;
+	assert(best.length() > 0);
+
 	return classes[best];
 }
 
@@ -193,18 +210,6 @@ bool generator::first_arg_is_isl_ctx(FunctionDecl *fd)
 	return is_isl_ctx(param->getOriginalType());
 }
 
-/* Is "type" that of a pointer to an isl_* structure?
- */
-bool generator::is_isl_type(QualType type)
-{
-	if (type->isPointerType()) {
-		string s = type->getPointeeType().getAsString();
-		return s.substr(0, 4) == "isl_";
-	}
-
-	return false;
-}
-
 /* Is "type" that of a pointer to a function?
  */
 bool generator::is_callback(QualType type)
@@ -227,12 +232,86 @@ bool generator::is_string(QualType type)
 	return false;
 }
 
+bool generator::is_unsigned(QualType type) {
+	const BuiltinType *bt = dyn_cast<BuiltinType>(type.getCanonicalType());
+	return bt && bt->isUnsignedInteger();
+}
+
 /* Return the name of the type that "type" points to.
- * The input "type" is assumed to be a pointer type.
  */
 string generator::extract_type(QualType type)
 {
-	if (type->isPointerType())
-		return type->getPointeeType().getAsString();
+	if (is_isl_class(type)) {
+		const RecordType *rt = dyn_cast<RecordType>(type->getPointeeType().getCanonicalType());
+		return rt ? rt->getDecl()->getNameAsString() : type->getPointeeType().getAsString();
+	}
+	if (is_isl_enum(type)) {
+		// handle both "isl_xxx" and "enum isl_xxx"
+		const EnumType *et = dyn_cast<EnumType>(type.getCanonicalType());
+		return et ? et->getDecl()->getNameAsString() : type.getAsString();
+	}
 	assert(0);
+}
+
+
+// Extract enum types of the form "isl_xxx" (when it's a typedef)
+// and also of the form "enum isl_xxx".
+bool generator::is_isl_enum(QualType type) {
+	bool isEnum = enums.find(type.getAsString()) != enums.end();
+	if (!isEnum) {
+		// check if it is an enum but not a typedef (i.e., of the form "enum isl_xxx")
+		const EnumType *et = dyn_cast<EnumType>(type.getCanonicalType());
+		isEnum = et && enums.find(et->getDecl()->getNameAsString()) != enums.end();
+	}
+	return isEnum;
+}
+
+bool generator::is_isl_result_argument(QualType type)
+{
+	return type->isPointerType() && is_isl_class(type->getPointeeType());
+}
+
+// Is 'type' a callback with user argument as the
+// last parameter (i.e. "..(*fn)(..., void *)")?
+bool generator::is_callback_with_user(QualType type)
+{
+	if (!type->isPointerType())
+		return false;
+	type = type->getPointeeType();
+	const PointerType *pft = dyn_cast<PointerType>(type.getCanonicalType());
+	if (!pft)
+		return false;
+	const FunctionProtoType *ft = dyn_cast<FunctionProtoType>(pft->getPointeeType());
+	unsigned n_parms = ft->getNumArgs();
+	if (n_parms == 0)
+		return false;
+	const PointerType *pt =
+			dyn_cast<PointerType>(ft->getArgType(n_parms-1));
+	if (!pt)
+		return false;
+
+	return pt->getPointeeType()->isVoidType();
+}
+
+const isl_enum &generator::find_enum(QualType type) {
+	assert(is_isl_enum(type));
+	return enums.at(extract_type(type));
+}
+
+/* Is "type" that of a pointer to an isl_* structure?
+ */
+bool generator::is_isl_class(QualType type) {
+	if (! type->isPointerType())
+		return false;
+	type = type->getPointeeType();
+	bool isClass = classes.find(type.getAsString()) != classes.end();
+	if (!isClass) {
+		const RecordType *rt = dyn_cast<RecordType>(type.getCanonicalType());
+		isClass = rt && classes.find(rt->getDecl()->getNameAsString()) != classes.end();
+	}
+	return isClass;
+}
+
+bool generator::is_isl_type(QualType type) {
+	return is_isl_class(type) || is_isl_enum(type);
 }

@@ -132,6 +132,7 @@ static bool is_exported(Decl *decl)
 struct MyASTConsumer : public ASTConsumer {
 	set<RecordDecl *> types;
 	set<FunctionDecl *> functions;
+	set<EnumDecl *> enums;
 
 	virtual HandleTopLevelDeclReturn HandleTopLevelDecl(DeclGroupRef D) {
 		Decl *decl;
@@ -147,6 +148,9 @@ struct MyASTConsumer : public ASTConsumer {
 			break;
 		case Decl::Function:
 			functions.insert(cast<FunctionDecl>(decl));
+			break;
+		case Decl::Enum:
+			enums.insert(cast<EnumDecl>(decl));
 			break;
 		default:
 			break;
@@ -388,7 +392,7 @@ int main(int argc, char *argv[])
 
 	generator *gen = 0;
 	if (Language.compare("python") == 0)
-		gen = new python_generator(consumer.types, consumer.functions);
+		gen = new python_generator(consumer.types, consumer.functions, consumer.enums);
 	else {
 		cerr << "Language '" << Language << "' not recognized." << endl
 		     << "Not generating bindings." << endl;

@@ -12,7 +12,7 @@ private:
 	ostream &os;
 
 public:
-	python_generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions);
+	python_generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions, set<EnumDecl *> &enums);
 
 	virtual void generate();  // overrides method in base class
 
