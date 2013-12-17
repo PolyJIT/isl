@@ -39,9 +39,10 @@
 #include "generator.h"
 
 /* Collect all functions that belong to a certain type,
- * separating constructors from regular methods.
+ * separating constructors from regular methods and collect all enums.
  */
-generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions)
+generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
+		     set<EnumDecl *> &enums)
 {
 	set<RecordDecl *>::iterator it;
 	for (it = types.begin(); it != types.end(); ++it) {
@@ -58,6 +59,21 @@ generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions)
 			c.constructors.insert(*in);
 		else
 			c.methods.insert(*in);
+	}
+
+	set<EnumDecl *>::const_iterator ie;
+	for (ie = enums.begin(); ie != enums.end(); ++ie) {
+		const EnumDecl *edecl = *ie;
+		const string name = edecl->getName();
+		this->enums[name].name = name;
+		EnumDecl::enumerator_iterator vi;
+
+		for (vi = edecl->enumerator_begin();
+		     vi != edecl->enumerator_end(); ++vi) {
+			const EnumConstantDecl *ecd = *vi;
+			this->enums[name].values[ecd->getNameAsString()] =
+			    ecd->getInitVal().getSExtValue();
+		}
 	}
 }
 
@@ -218,6 +234,11 @@ bool generator::is_string(QualType type)
 	return false;
 }
 
+bool generator::is_unsigned(QualType type) {
+	const BuiltinType *bt = dyn_cast<BuiltinType>(type.getCanonicalType());
+	return bt && bt->isUnsignedInteger();
+}
+
 /* Return the name of the type that "type" points to.
  */
 string generator::extract_type(QualType type)
@@ -227,6 +248,12 @@ string generator::extract_type(QualType type)
 		    type->getPointeeType().getCanonicalType());
 		return rt ? rt->getDecl()->getNameAsString()
 			  : type->getPointeeType().getAsString();
+	}
+	if (is_isl_enum(type)) {
+		const EnumType *et =
+		    dyn_cast<EnumType>(type.getCanonicalType());
+		return et ? et->getDecl()->getNameAsString()
+			  : type.getAsString();
 	}
 	assert(0);
 }
@@ -249,5 +276,31 @@ bool generator::is_isl_class(QualType type) {
 }
 
 bool generator::is_isl_type(QualType type) {
-	return is_isl_class(type);
+	return is_isl_class(type) || is_isl_enum(type);
+}
+
+/* check if it is an enum but not a typedef (i.e., of the form
+ * "enum isl_xxx")
+ */
+static bool is_canonical_enum(map<string, isl_enum> &enums, QualType type) {
+	const EnumType *et = dyn_cast<EnumType>(type.getCanonicalType());
+	return et &&
+	       enums.find(et->getDecl()->getNameAsString()) != enums.end();
+}
+
+/* Extract enum types of the form "isl_xxx" (when it's a typedef)
+ * and also of the form "enum isl_xxx".
+ */
+bool generator::is_isl_enum(QualType type) {
+	bool isEnum = enums.find(type.getAsString()) != enums.end();
+	if (!isEnum)
+		isEnum = is_canonical_enum(enums, type);
+	return isEnum;
+}
+
+/* Get the isl_enum that is associated to the given type.
+ */
+const isl_enum &generator::find_enum(QualType type) {
+	assert(is_isl_enum(type));
+	return enums.at(extract_type(type));
 }
