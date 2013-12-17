@@ -2,9 +2,16 @@
 #define ISL_INTERFACE_GENERATOR_H
 
 #include <clang/AST/Decl.h>
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <set>
+#include <sstream>
 #include <string>
+
+#include <cerrno>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 using namespace clang;
 using namespace std;
@@ -18,21 +25,42 @@ struct isl_class {
 	RecordDecl *type;
 	set<FunctionDecl *> constructors;
 	set<FunctionDecl *> methods;
-
-	void print(map<string, isl_class> &classes, set<string> &done);
-	void print_constructor(FunctionDecl *method);
-	void print_method(FunctionDecl *method, bool subclass, string super);
 };
 
-bool is_subclass(RecordDecl *decl, string &super);
-bool is_constructor(Decl *decl);
-bool takes(Decl *decl);
-isl_class &method2class(map<string, isl_class> &classes, FunctionDecl *fd);
-bool is_isl_ctx(QualType type);
-bool first_arg_is_isl_ctx(FunctionDecl *fd);
-bool is_isl_type(QualType type);
-bool is_callback(QualType type);
-bool is_string(QualType type);
-string extract_type(QualType type);
+/* Base class for interface generators.
+ */
+class generator {
+private:
+	// Mapping from file names (for generated files) to
+	// string output streams for the file contents.
+	map<string,ostringstream*> files;
+
+protected:
+	map<string,isl_class> classes;
+
+public:
+	generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions);
+	virtual ~generator() = 0;
+
+	virtual void generate() = 0;
+
+	// Write generated files to the given directory.
+	void write_generated_files(const string &directory);
+
+protected:
+	// Obtain the output stream for a given file name.
+	ostream &outputfile(const string &name);
+
+	bool is_subclass(RecordDecl *decl, string &super);
+	bool is_constructor(Decl *decl);
+	bool takes(Decl *decl);
+	isl_class &method2class(map<string, isl_class> &classes, FunctionDecl *fd);
+	bool is_isl_ctx(QualType type);
+	bool first_arg_is_isl_ctx(FunctionDecl *fd);
+	bool is_isl_type(QualType type);
+	bool is_callback(QualType type);
+	bool is_string(QualType type);
+	string extract_type(QualType type);
+};
 
 #endif

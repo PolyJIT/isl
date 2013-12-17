@@ -69,6 +69,7 @@
 #include <clang/Sema/Sema.h>
 
 #include "extract_interface.h"
+#include "generator.h"
 #include "python.h"
 
 using namespace std;
@@ -84,6 +85,13 @@ static llvm::cl::opt<string> InputFilename(llvm::cl::Positional,
 static llvm::cl::list<string> Includes("I",
 			llvm::cl::desc("Header search path"),
 			llvm::cl::value_desc("path"), llvm::cl::Prefix);
+static llvm::cl::opt<string> OutputDir("output-dir",
+                                       llvm::cl::desc("Output directory"),
+                                       llvm::cl::value_desc("dir"));
+static llvm::cl::opt<string> Language(llvm::cl::Required, llvm::cl::ValueRequired,
+				      "language",
+                                      llvm::cl::desc("Bindings to generate"),
+				      llvm::cl::value_desc("python"));
 
 static const char *ResourceDir =
 	CLANG_PREFIX "/lib/clang/" CLANG_VERSION_STRING;
@@ -378,7 +386,20 @@ int main(int argc, char *argv[])
 	ParseAST(*sema);
 	Diags.getClient()->EndSourceFile();
 
-	generate_python(consumer.types, consumer.functions);
+	generator *gen = 0;
+	if (Language.compare("python") == 0)
+		gen = new python_generator(consumer.types, consumer.functions);
+	else {
+		cerr << "Language '" << Language << "' not recognized." << endl
+		     << "Not generating bindings." << endl;
+	}
+
+	if (gen) {
+		gen->generate();
+		const string &outdir = OutputDir.length() == 0 ? string(".") : OutputDir;
+		gen->write_generated_files(outdir);
+		delete gen;
+	}
 
 	delete sema;
 	delete Clang;
