@@ -250,6 +250,32 @@ AC_SUBST(WARNING_FLAGS)
 PACKAGE_CFLAGS="$MP_CPPFLAGS"
 PACKAGE_LDFLAGS="$MP_LDFLAGS"
 PACKAGE_LIBS="-lisl $MP_LIBS"
+
+# JNI, Java and Scala
+AC_ARG_WITH([jni-include],
+	[AS_HELP_STRING([--with-jni-include=DIR],
+			[directory where to find jni.h])],
+	[JNI_INCLUDE=$withval],
+	[])
+AC_SUBST(JNI_INCLUDE)
+SAVE_CPPFLAGS="$CPPFLAGS"
+if test "x$JNI_INCLUDE" != "x"; then
+   CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE"
+fi
+AC_CHECK_HEADER([jni.h], [AM_CONDITIONAL([HAVE_JNI],[true])],
+			 [AM_CONDITIONAL([HAVE_JNI],[false])])
+CPPFLAGS="$SAVE_CPPFLAGS"
+AC_ARG_VAR(JAVAC, Java compiler command)
+AC_PATH_PROG(JAVAC, javac)
+AC_ARG_VAR(JAR, Java JAR command)
+AC_PATH_PROG(JAR, jar)
+AC_ARG_VAR(SCALAC, Scala compiler command)
+AC_PATH_PROG(SCALAC, scalac)
+
+AC_PATH_PROG(CP, cp)
+AC_PROG_MKDIR_P
+AC_PATH_PROG(RM, rm)
+
 AX_CREATE_PKGCONFIG_INFO
 
 AX_DETECT_GIT_HEAD
