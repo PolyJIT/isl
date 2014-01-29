@@ -213,6 +213,25 @@ AC_SUBST(WARNING_FLAGS)
 PACKAGE_CFLAGS="$MP_CPPFLAGS"
 PACKAGE_LDFLAGS="$MP_LDFLAGS"
 PACKAGE_LIBS="-lisl $MP_LIBS"
+
+# Java, Scala and JNA
+AC_ARG_VAR(JAVAC, Java compiler command)
+AC_PATH_PROG(JAVAC, javac)
+AC_ARG_VAR(JAR, Java JAR command)
+AC_PATH_PROG(JAR, jar)
+AC_ARG_VAR(SCALAC, Scala compiler command)
+AC_PATH_PROG(SCALAC, scalac)
+AC_ARG_WITH([jna],
+	[AS_HELP_STRING([--with-jna=JNA.jar],
+			[where to find Java Native Access])],
+	[JNA_JAR=$withval],
+	[])
+AC_SUBST(JNA_JAR)
+
+AC_PATH_PROG(CP, cp)
+AC_PROG_MKDIR_P
+AC_PATH_PROG(RM, rm)
+
 AX_CREATE_PKGCONFIG_INFO
 
 AX_DETECT_GIT_HEAD
