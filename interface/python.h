@@ -19,9 +19,14 @@ public:
 private:
 	void print_callback(QualType type, int arg);
 	void print(const isl_class &clazz);
+	void print_constructor_call(const isl_class &clazz, FunctionDecl *cons,
+				    const string &ctxVar, const string &resultVar);
 	void print_constructor(const isl_class &clazz, FunctionDecl *method);
+	void print_named_constructor(const isl_class &clazz, FunctionDecl *method);
 	void print_method(const isl_class &clazz, FunctionDecl *method, bool subclass, string super);
 	void print_enum(const isl_enum &e);
+
+	bool constructorShouldBeNamed(const isl_class &clazz, FunctionDecl *cons);
 
 	// Redirect calls to "printf" in the print* methods to the
 	// output stream "os"
