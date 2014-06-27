@@ -99,7 +99,7 @@ __isl_give isl_union_set *isl_union_set_project_out(
 __isl_export
 int isl_union_set_is_params(__isl_keep isl_union_set *uset);
 __isl_export
-int isl_union_set_is_empty(__isl_keep isl_union_set *uset);
+__isl_bool int isl_union_set_is_empty(__isl_keep isl_union_set *uset);
 
 __isl_export
 int isl_union_set_is_subset(__isl_keep isl_union_set *uset1,

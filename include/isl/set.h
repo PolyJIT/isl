@@ -270,7 +270,7 @@ int isl_basic_set_plain_is_empty(__isl_keep isl_basic_set *bset);
 ISL_DEPRECATED
 int isl_basic_set_fast_is_empty(__isl_keep isl_basic_set *bset);
 __isl_export
-int isl_basic_set_is_empty(__isl_keep isl_basic_set *bset);
+__isl_bool int isl_basic_set_is_empty(__isl_keep isl_basic_set *bset);
 int isl_basic_set_is_bounded(__isl_keep isl_basic_set *bset);
 __isl_export
 int isl_basic_set_is_subset(__isl_keep isl_basic_set *bset1,
@@ -461,7 +461,7 @@ int isl_set_fast_is_universe(__isl_keep isl_set *set);
 __isl_export
 int isl_set_is_params(__isl_keep isl_set *set);
 __isl_export
-int isl_set_is_empty(__isl_keep isl_set *set);
+__isl_bool int isl_set_is_empty(__isl_keep isl_set *set);
 __isl_export
 int isl_set_is_bounded(__isl_keep isl_set *set);
 __isl_export

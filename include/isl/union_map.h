@@ -186,7 +186,7 @@ __isl_give isl_union_map *isl_union_map_project_out(
 	enum isl_dim_type type, unsigned first, unsigned n);
 
 __isl_export
-int isl_union_map_is_empty(__isl_keep isl_union_map *umap);
+__isl_bool int isl_union_map_is_empty(__isl_keep isl_union_map *umap);
 __isl_export
 int isl_union_map_is_single_valued(__isl_keep isl_union_map *umap);
 int isl_union_map_plain_is_injective(__isl_keep isl_union_map *umap);
