@@ -363,7 +363,7 @@ __isl_give isl_printer *isl_printer_set_suffix(__isl_take isl_printer *p,
 }
 
 __isl_give isl_printer *isl_printer_set_output_format(__isl_take isl_printer *p,
-	int output_format)
+	enum isl_format output_format)
 {
 	if (!p)
 		return NULL;
@@ -373,7 +373,7 @@ __isl_give isl_printer *isl_printer_set_output_format(__isl_take isl_printer *p,
 	return p;
 }
 
-int isl_printer_get_output_format(__isl_keep isl_printer *p)
+enum isl_format isl_printer_get_output_format(__isl_keep isl_printer *p)
 {
 	if (!p)
 		return -1;
