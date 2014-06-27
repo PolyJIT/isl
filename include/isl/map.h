@@ -358,7 +358,7 @@ int isl_basic_map_plain_is_empty(__isl_keep isl_basic_map *bmap);
 ISL_DEPRECATED
 int isl_basic_map_fast_is_empty(__isl_keep isl_basic_map *bmap);
 __isl_export
-int isl_basic_map_is_empty(__isl_keep isl_basic_map *bmap);
+__isl_bool int isl_basic_map_is_empty(__isl_keep isl_basic_map *bmap);
 __isl_export
 int isl_basic_map_is_subset(__isl_keep isl_basic_map *bmap1,
 		__isl_keep isl_basic_map *bmap2);
@@ -683,7 +683,7 @@ int isl_map_fast_is_empty(__isl_keep isl_map *map);
 __isl_export
 int isl_map_plain_is_universe(__isl_keep isl_map *map);
 __isl_export
-int isl_map_is_empty(__isl_keep isl_map *map);
+__isl_bool int isl_map_is_empty(__isl_keep isl_map *map);
 __isl_export
 int isl_map_is_subset(__isl_keep isl_map *map1, __isl_keep isl_map *map2);
 __isl_export
@@ -811,7 +811,7 @@ __isl_give isl_map *isl_map_reaching_path_lengths(__isl_take isl_map *map,
 	int *exact);
 __isl_export
 __isl_give isl_map *isl_map_transitive_closure(__isl_take isl_map *map,
-	int *exact);
+	__isl_bool int *exact);
 
 __isl_export
 __isl_give isl_map *isl_map_lex_le_map(__isl_take isl_map *map1,
