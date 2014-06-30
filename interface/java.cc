@@ -629,11 +629,16 @@ void java_generator::print_class(isl_class &clazz)
 		print_constructor(os, clazz, *in, true);
 	}
 
-	os << "    protected void finalize() {" << endl
-	   << "        synchronized(this.ctx) {" << endl
-	   << "            Impl.isl." << name << "_free(getPtr());" << endl
-	   << "        }" << endl
-	   << "    }" << endl;
+	// We do not free objects of classes that have in-place update
+	// (e.g., isl_band). These values exist only in dependence of
+	// parent objects and are freed when the parent object goes away.
+	if (!is_inplace(clazz)) {
+		os << "    protected void finalize() {" << endl
+		   << "        synchronized(this.ctx) {" << endl
+		   << "            Impl.isl." << name << "_free(getPtr());" << endl
+		   << "        }" << endl
+		   << "    }" << endl;
+	}
 
 	if (can_be_printed(clazz)) {
 		os << "    public String toString() {" << endl

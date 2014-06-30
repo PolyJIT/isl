@@ -87,6 +87,10 @@ protected:
 
 	// Check if there is an isl_printer_print_* method for an isl class
 	bool can_be_printed(const isl_class &clazz) const;
+
+	// Check if the class represents objects that are updaten in-place
+	// (such as isl_band).
+	bool is_inplace(const isl_class &clazz) const;
 };
 
 #endif
