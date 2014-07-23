@@ -202,6 +202,13 @@ bool generator::takes(Decl *decl)
 	return has_annotation(decl, "isl_take");
 }
 
+/* Is decl marked as giving a (new) reference?
+ */
+bool generator::gives(const Decl *decl)
+{
+        return has_annotation(decl, "isl_give");
+}
+
 /*
  * A few functions do not follow the usual naming scheme
  * isl_(class)_(fun). This array stores the exceptions

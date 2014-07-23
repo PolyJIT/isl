@@ -241,9 +241,24 @@ AH_BOTTOM([#include <isl_config_post.h>])
 AC_CONFIG_HEADERS(isl_config.h)
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(doc/Makefile)
+
 if test $with_clang = system; then
 	AC_CONFIG_FILES(interface/Makefile)
 fi
+
+dnl isl++ configuration
+AM_CONDITIONAL(CAN_GENERATE_ISL_CXX, [test $with_clang = system])
+AC_MSG_CHECKING([if we can generate C++ bindings])
+AM_COND_IF([CAN_GENERATE_ISL_CXX],
+	    [AC_MSG_RESULT([yes])
+	     MAYBE_GENERATE_ISL_CXX=isl.cpp
+	    ],
+	    [AC_MSG_RESULT([no])
+	     MAYBE_GENERATE_ISL_CXX=
+	    ])
+AC_SUBST([MAYBE_GENERATE_ISL_CXX])
+dnl isl++ configuration end
+
 AC_CONFIG_FILES([bound_test.sh], [chmod +x bound_test.sh])
 AC_CONFIG_FILES([codegen_test.sh], [chmod +x codegen_test.sh])
 AC_CONFIG_FILES([pip_test.sh], [chmod +x pip_test.sh])

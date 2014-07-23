@@ -70,6 +70,7 @@ protected:
 	bool is_constructor(Decl *decl);
 	bool is_bool(const Decl *decl);
 	bool takes(Decl *decl);
+        bool gives(const Decl *decl);
 	isl_class &method2class(map<string, isl_class> &classes, FunctionDecl *fd);
 	bool is_isl_ctx(QualType type);
 	bool first_arg_is_isl_ctx(FunctionDecl *fd);
