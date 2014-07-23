@@ -72,6 +72,7 @@
 #include "generator.h"
 #include "java.h"
 #include "python.h"
+#include "cpp.h"
 
 using namespace std;
 using namespace clang;
@@ -408,6 +409,9 @@ int main(int argc, char *argv[])
 	else if (Language.compare("java") == 0)
 		gen = new java_generator(consumer.types, consumer.functions,
 					 consumer.enums);
+	else if (Language.compare("c++") == 0)
+		gen = new cpp_generator(consumer.types, consumer.functions,
+					consumer.enums);
 	else {
 		cerr << "Language '" << Language << "' not recognized." << endl
 		     << "Not generating bindings." << endl;
