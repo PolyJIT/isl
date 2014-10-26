@@ -250,6 +250,7 @@ string generator::extract_type(QualType type)
 		const EnumType *et = dyn_cast<EnumType>(type.getCanonicalType());
 		return et ? et->getDecl()->getNameAsString() : type.getAsString();
 	}
+	std::cerr << "Cannot extract type for " << type.getAsString() << std::endl;
 	assert(0);
 }
 
