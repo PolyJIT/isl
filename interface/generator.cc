@@ -267,6 +267,8 @@ bool generator::is_isl_enum(QualType type) {
 	return isEnum;
 }
 
+// A parameter is a result argument for an isl class when it is a
+// pointer to a pointer to an isl object (i.e., "isl_map **").
 bool generator::is_isl_result_argument(QualType type)
 {
 	return type->isPointerType() && is_isl_class(type->getPointeeType());
