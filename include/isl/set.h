@@ -183,12 +183,16 @@ void isl_basic_set_print(__isl_keep isl_basic_set *bset, FILE *out, int indent,
 	const char *prefix, const char *suffix, unsigned output_format);
 void isl_set_print(__isl_keep struct isl_set *set, FILE *out, int indent,
 	unsigned output_format);
+
+__isl_export
 __isl_give isl_basic_set *isl_basic_set_fix_si(__isl_take isl_basic_set *bset,
 		enum isl_dim_type type, unsigned pos, int value);
 __isl_give isl_basic_set *isl_basic_set_fix_val(__isl_take isl_basic_set *bset,
 	enum isl_dim_type type, unsigned pos, __isl_take isl_val *v);
+__isl_export
 __isl_give isl_set *isl_set_fix_si(__isl_take isl_set *set,
 		enum isl_dim_type type, unsigned pos, int value);
+__isl_export
 __isl_give isl_set *isl_set_lower_bound_si(__isl_take isl_set *set,
 		enum isl_dim_type type, unsigned pos, int value);
 __isl_give isl_set *isl_set_lower_bound_val(__isl_take isl_set *set,
@@ -256,10 +260,14 @@ int isl_basic_set_compare_at(struct isl_basic_set *bset1,
 int isl_set_follows_at(__isl_keep isl_set *set1,
 	__isl_keep isl_set *set2, int pos);
 
+__isl_export
 __isl_give isl_basic_set *isl_basic_set_params(__isl_take isl_basic_set *bset);
+__isl_export
 __isl_give isl_basic_set *isl_basic_set_from_params(
 	__isl_take isl_basic_set *bset);
+__isl_export
 __isl_give isl_set *isl_set_params(__isl_take isl_set *set);
+__isl_export
 __isl_give isl_set *isl_set_from_params(__isl_take isl_set *set);
 
 int isl_basic_set_dims_get_sign(__isl_keep isl_basic_set *bset,
@@ -284,6 +292,7 @@ struct isl_set *isl_set_extend(struct isl_set *base,
 		unsigned nparam, unsigned dim);
 __isl_give isl_set *isl_set_empty(__isl_take isl_space *dim);
 struct isl_set *isl_set_empty_like(struct isl_set *set);
+__isl_constructor
 __isl_give isl_set *isl_set_universe(__isl_take isl_space *dim);
 __isl_give isl_set *isl_set_nat_universe(__isl_take isl_space *dim);
 __isl_give isl_set *isl_set_universe_like(__isl_keep isl_set *model);
@@ -404,6 +413,7 @@ __isl_export
 __isl_give isl_basic_set *isl_basic_set_eliminate(
 	__isl_take isl_basic_set *bset,
 	enum isl_dim_type type, unsigned first, unsigned n);
+__isl_export
 __isl_give isl_set *isl_set_eliminate(__isl_take isl_set *set,
 	enum isl_dim_type type, unsigned first, unsigned n);
 struct isl_set *isl_set_eliminate_dims(struct isl_set *set,

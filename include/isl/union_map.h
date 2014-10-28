@@ -74,6 +74,7 @@ __isl_give isl_union_map *isl_union_map_lexmin(__isl_take isl_union_map *umap);
 __isl_export
 __isl_give isl_union_map *isl_union_map_lexmax(__isl_take isl_union_map *umap);
 
+__isl_export
 __isl_give isl_union_map *isl_union_map_add_map(__isl_take isl_union_map *umap,
 	__isl_take isl_map *map);
 __isl_export
