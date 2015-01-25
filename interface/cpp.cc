@@ -270,7 +270,7 @@ static void printHandleError(ostream &os, int level) {
 
 static void printHandleErrorCall(ostream &os, int level, string &&what) {
   print(os, "{0}if (Ctx.hasError()) {{\n"
-            "{0}  handleError({1});\n"
+            "{0}  handleError(\"{1}\");\n"
             "{0}}}\n",
         level, what);
 }
