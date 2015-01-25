@@ -129,16 +129,16 @@ static const string getForwardDecls(set<pair<string, bool>> deps) {
  *
  * @return the indentend outstream
  */
-static ostream &indent(ostream &os, unsigned depth) {
+static string indent(unsigned depth) {
   assert(depth > 0);
 
-  string indent;
+  string indt;
   while (depth > 0) {
-    indent += " ";
+    indt += " ";
     --depth;
   }
 
-  return os << indent;
+  return indt;
 }
 
 /**
@@ -257,21 +257,22 @@ static string type2cpp(const string &name) {
 }
 
 static void printHandleError(ostream &os, int level) {
-  indent(os, level) << "static inline void handleError(std::string what) {"
-                    << endl;
-  os << "#ifdef __EXCEPTIONS" << endl;
-  indent(os, level + 2) << "throw IslException(what);" << endl;
-  os << "#else" << endl;
-  indent(os, level + 2) << "std::cerr << what << std::endl;" << endl;
-  indent(os, level + 2) << "std::abort();" << endl;
-  os << "#endif" << endl;
-  os << "}" << endl;
+  print(os, "{0}static inline void handleError(std::string what) {{\n"
+            "{0}#ifdef __EXCEPTIONS\n"
+            "{0}  throw IslException(what);\n"
+            "{0}#else\n"
+            "{0}  std::cerr << what << std::endl;\n"
+            "{0}  std::abort();\n"
+            "{0}#endif\n"
+            "{0}}}\n",
+        indent(level));
 }
 
 static void printHandleErrorCall(ostream &os, int level, string &&what) {
-  indent(os, level) << "if (Ctx.hasError()) {" << endl;
-  indent(os, level + 2) << "handleError(\"" << what << "\");" << endl;
-  indent(os, level) << "}" << endl;
+  print(os, "{0}if (Ctx.hasError()) {{\n"
+            "{0}  handleError({1});\n"
+            "{0}}}\n",
+        level, what);
 }
 
 /**
@@ -329,12 +330,12 @@ public:
    */
   void print_explicit_constructors_h(ostream &os) {
     if (can_copy) {
-      print(os, "  explicit {}(Context &Ctx, {} *That) : "
-                "{}(Ctx, (void *)That) {{/* empty */}}\n",
+      print(os, "  explicit {0}(Context &Ctx, {1} *That) : "
+                "{2}(Ctx, (void *)That) {{/* empty */}}\n"
+                "\n"
+                "  explicit {0}(Context &Ctx, void *That) : "
+                "{2}(Ctx, (void *)That) {{/* empty */}}\n",
             p_name, name, base_class);
-      print(os, "  explicit {}(Context &Ctx, void *That) : "
-                "{}(Ctx, (void *)That) {{/* empty */}}\n",
-            p_name, base_class);
     } else {
       print(os, "  explicit {}(Context &Ctx, std::shared_ptr<ptr> That)\n"
                 "    : {}(Ctx, nullptr), This(That) {{/* empty */}}\n",
@@ -728,20 +729,20 @@ string cpp_generator::paramtype2cpp(QualType type, bool wrapperTypes,
   if (is_isl_type(type)) {
     return cppTypeName(type);
   } else if (is_isl_result_argument(type)) {
-    return "std::unique_ptr<" + cppTypeName(type->getPointeeType()) + "> *";
+    return format("std::unique_ptr<{0}> *", cppTypeName(type->getPointeeType()));
   } else if (type->isPointerType()) {
     QualType ptype = type->getPointeeType();
     if (ptype->isFunctionType()) {
       const FunctionProtoType *ft = ptype->getAs<FunctionProtoType>();
       unsigned nArgs = ft->getNumArgs();
-      ostringstream os;
-      os << "const std::function<" << ft->getReturnType().getAsString();
-      os << "(";
+
+      ostringstream arg_decl_list;
       for (unsigned i = 0; i < nArgs; ++i) {
-        os << (i > 0 ? ", " : "") << ft->getArgType(i).getAsString();
+        arg_decl_list << (i > 0 ? ", " : "") << ft->getArgType(i).getAsString();
       }
-      os << ")> &&";
-      return os.str();
+
+      return format("const std::function<{0}({1})> &&",
+                    ft->getReturnType().getAsString(), arg_decl_list.str());
     }
   }
 
@@ -883,8 +884,7 @@ void cpp_generator::print_argument(ostream &os, ParmVarDecl *param) {
   } else if (is_isl_enum(type)) {
     print(os, "({0}){1}", type.getAsString(), name);
   } else if (is_isl_class(type)) {
-    string classname = extract_type(type);
-    os << isl_ptr(classname, "_cast_" + name, takes(param));
+    os << isl_ptr(extract_type(type), "_cast_" + name, takes(param));
   } else if (is_string(type)) {
     print(os, "{0}.c_str()", name);
   } else if (is_callback(type)) {
@@ -963,6 +963,14 @@ void cpp_generator::handle_return(ostream &os, const FunctionDecl *method,
   }
 }
 
+/**
+ * @brief Create a list of argument declarations
+ *
+ * @param method the method we create the list for
+ * @param offset skip the first <offset> arguments
+ *
+ * @return list of argument declarations
+ */
 string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset) {
   ostringstream os;
   int num_params = method->getNumParams();
@@ -981,6 +989,14 @@ string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset) {
   return os.str();
 }
 
+/**
+ * @brief Create a list of arguments
+ *
+ * @param method the method we create the list for
+ * @param offset skip the first <offset> arguments
+ *
+ * @return
+ */
 string cpp_generator::get_argument_list(FunctionDecl *method, int offset) {
   ostringstream os;
   int num_params = method->getNumParams();
