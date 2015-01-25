@@ -272,7 +272,45 @@ static void printHandleErrorCall(ostream &os, int level, string &&what) {
   print(os, "{0}if (Ctx.hasError()) {{\n"
             "{0}  handleError(\"{1}\");\n"
             "{0}}}\n",
-        level, what);
+        indent(level), what);
+}
+
+/**
+ * @brief Print a custom deleter lambda function (cleanup for smart-pointers)
+ *
+ * @param os
+ * @param name
+ * @param cname
+ */
+static void print_custom_deleter(ostream &os, string name, string cname) {
+  print(os, "[=](ptr *{0}) {{\n"
+            "  {1}_free({0}->p);\n"
+            "  {0}->p = nullptr;\n"
+            "}}",
+        name, cname);
+}
+
+/**
+ * @brief Print a Pointer wrapper to store isl objects.
+ *
+ * We need a complete type for using smart pointers later on, so we wrap
+ * isl pointers in a very basic way to provide a complete type.
+ *
+ * @param os
+ * @param name
+ */
+static void print_ptr_wrapper(ostream &os, string name) {
+  print(os, "  struct ptr {{\n"
+            "    {0} *p;\n"
+            "    explicit ptr({0} *p) : p(p) {{}}\n"
+            "    ~ptr() {\n"
+            "      {0}_free(p); }}\n"
+            "    ptr(const ptr &other) = delete;\n"
+            "    ptr &operator=(const ptr &other) = delete;\n"
+            "    ptr(ptr && other) = delete;\n"
+            "    ptr &operator=(ptr && other) = delete;\n"
+            "  }};\n",
+        name);
 }
 
 /**
@@ -1183,21 +1221,6 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 }
 
 /**
- * @brief Print a custom deleter lambda function (cleanup for smart-pointers)
- *
- * @param os
- * @param name
- * @param cname
- */
-static void print_custom_deleter(ostream &os, string name, string cname) {
-  print(os, "[=](ptr *{0}) {{\n"
-            "  {1}_free({0}->p);\n"
-            "  {0}->p = nullptr;\n"
-            "}}",
-        name, cname);
-}
-
-/**
  * @brief Print the constructor definition
  *
  * @param os
@@ -1273,26 +1296,95 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 }
 
 /**
- * @brief Print a Pointer wrapper to store isl objects.
- *
- * We need a complete type for using smart pointers later on, so we wrap
- * isl pointers in a very basic way to provide a complete type.
- *
- * @param os
- * @param name
+ * @brief Generate all
  */
-static void print_ptr_wrapper(ostream &os, string name) {
-  print(os, "  struct ptr {{\n"
-            "    {0} *p;\n"
-            "    explicit ptr({0} *p) : p(p) {{}}\n"
-            "    ~ptr() {\n"
-            "      {0}_free(p); }}\n"
-            "    ptr(const ptr &other) = delete;\n"
-            "    ptr &operator=(const ptr &other) = delete;\n"
-            "    ptr(ptr && other) = delete;\n"
-            "    ptr &operator=(ptr && other) = delete;\n"
-            "  }};\n",
-        name);
+void cpp_generator::generate() {
+  generateClasses();
+  generateEnums();
+}
+
+/**
+ * @brief Print a special class for the isl_ctx objects.
+ *
+ * We perform locking in here to restore thread safety.
+ */
+void cpp_generator::print_isl_ctx_class() {
+  string fileName = includePath + "Context.h";
+  ostream &os = outputfile(fileName);
+
+  os << getGuardHeader("Context");
+  print(os,
+        "#include \"isl/{0}.h\"\n"
+        "\n"
+        "#include <mutex>\n"
+        "#include <isl/options.h>\n"
+        "\n"
+        "namespace isl{{\n"
+        "class Context {{\n"
+        "private:\n"
+        "  isl_ctx *This;\n"
+        "  std::recursive_mutex M;\n"
+        "\n"
+        "public:\n"
+        "  static Context &get(isl_ctx *Other = NULL) {{\n"
+        "    static Context instance(Other);\n"
+        "    return instance;\n"
+        "  }}\n"
+        "\n"
+        "  void lock() {{\n"
+        "    M.lock();\n"
+        "  }}\n"
+        "\n"
+        "  void unlock() {{\n"
+        "    M.unlock();\n"
+        "  }}\n"
+        "\n"
+        "  isl_ctx *unwrap() {{\n"
+        "    return This;\n"
+        "  }}\n"
+        "\n"
+        "  bool hasError() {{\n"
+        "    enum isl_error err = isl_ctx_las_error(This);\n"
+        "    int goe = isl_options_get_in_error(This);\n"
+        "    return (err != isl_error_none) && goe != ISL_ON_ERROR_CONTINUE;\n"
+        "  }}\n"
+        "\n"
+        "private:\n"
+        "  Context(isl_ctx *Other = NULL) {{\n"
+        "    if (This)\n"
+        "      return;\n"
+        "    if (Other)\n"
+        "      This = Other;\n"
+        "    else\n"
+        "      This = isl_ctx_alloc();\n"
+        "  }} // Invisible.\n"
+        "\n"
+        "  Context(Context const &); // Do not implement\n"
+        "  void operator=(Context const &); // Do not implement\n"
+        "}};\n"
+        "}} //namespace isl\n",
+        getIncludeForIslObj("isl_ctx"));
+  os << getGuardFooter("Context");
+}
+
+/**
+ * @brief A list of non-copyable objects that are not declare uncopyable in isl.
+ *
+ * TODO: Fix this in isl, maybe?
+ *
+ * As we implement the isl_copy stuff via unwrap, we want to make sure to be
+ * able to unwrap. So far only isl_schedule and isl_printer fail us.
+ */
+static set<string> NonCopyable = {"isl_schedule", "isl_printer"};
+/**
+ * @brief Return true, if the class name is in the NonCopyable set.
+ *
+ * @param clazz
+ *
+ * @return
+ */
+bool cpp_generator::can_copy(isl_class &clazz) {
+  return NonCopyable.count(clazz.name) == 0;
 }
 
 /**
@@ -1427,98 +1519,6 @@ void cpp_generator::print_class(isl_class &clazz) {
   //  print_additional_val_methods(os);
 
   os << getGuardFooter(p_name);
-}
-
-/**
- * @brief Generate all
- */
-void cpp_generator::generate() {
-  generateClasses();
-  generateEnums();
-}
-
-/**
- * @brief Print a special class for the isl_ctx objects.
- *
- * We perform locking in here to restore thread safety.
- */
-void cpp_generator::print_isl_ctx_class() {
-  string fileName = includePath + "Context.h";
-  ostream &os = outputfile(fileName);
-
-  os << getGuardHeader("Context");
-  print(os,
-        "#include \"isl/{0}.h\"\n"
-        "\n"
-        "#include <mutex>\n"
-        "#include <isl/options.h>\n"
-        "\n"
-        "namespace isl{{\n"
-        "class Context {{\n"
-        "private:\n"
-        "  isl_ctx *This;\n"
-        "  std::recursive_mutex M;\n"
-        "\n"
-        "public:\n"
-        "  static Context &get(isl_ctx *Other = NULL) {{\n"
-        "    static Context instance(Other);\n"
-        "    return instance;\n"
-        "  }}\n"
-        "\n"
-        "  void lock() {{\n"
-        "    M.lock();\n"
-        "  }}\n"
-        "\n"
-        "  void unlock() {{\n"
-        "    M.unlock();\n"
-        "  }}\n"
-        "\n"
-        "  isl_ctx *unwrap() {{\n"
-        "    return This;\n"
-        "  }}\n"
-        "\n"
-        "  bool hasError() {{\n"
-        "    enum isl_error err = isl_ctx_las_error(This);\n"
-        "    int goe = isl_options_get_in_error(This);\n"
-        "    return (err != isl_error_none) && goe != ISL_ON_ERROR_CONTINUE;\n"
-        "  }}\n"
-        "\n"
-        "private:\n"
-        "  Context(isl_ctx *Other = NULL) {{\n"
-        "    if (This)\n"
-        "      return;\n"
-        "    if (Other)\n"
-        "      This = Other;\n"
-        "    else\n"
-        "      This = isl_ctx_alloc();\n"
-        "  }} // Invisible.\n"
-        "\n"
-        "  Context(Context const &); // Do not implement\n"
-        "  void operator=(Context const &); // Do not implement\n"
-        "}};\n"
-        "}} //namespace isl\n",
-        getIncludeForIslObj("isl_ctx"));
-  os << getGuardFooter("Context");
-}
-
-/**
- * @brief A list of non-copyable objects that are not declare uncopyable in isl.
- *
- * TODO: Fix this in isl, maybe?
- *
- * As we implement the isl_copy stuff via unwrap, we want to make sure to be
- * able to unwrap. So far only isl_schedule and isl_printer fail us.
- */
-static set<string> NonCopyable = {"isl_schedule", "isl_printer"};
-/**
- * @brief Return true, if the class name is in the NonCopyable set.
- *
- * @param clazz
- *
- * @return
- */
-bool cpp_generator::can_copy(isl_class &clazz) {
-  return NonCopyable.count(clazz.name) == 0;
 }
 
 /**
