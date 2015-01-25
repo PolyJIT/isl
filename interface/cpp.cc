@@ -1269,32 +1269,30 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
           ? format("{}.ctx()", cons->getParamDecl(ctxSrc)->getNameAsString())
           : "Context::get()";
 
+  ostringstream prepare_os;
+  for (int i = drop_ctx; i < num_params; ++i) {
+    ParmVarDecl *param = cons->getParamDecl(i);
+    prepare_argument(prepare_os, param);
+  }
+
+  string argument_list = get_argument_list(cons, drop_ctx);
+  string argument_decl_list = get_argument_decl_list(cons, drop_ctx);
+
+  ostringstream handle_error_os;
+  printHandleErrorCall(handle_error_os, 2,
+                       fullname + " returned a NULL pointer.");
+
   os << endl;
   if (asNamedConstructor) {
     print(os, "inline {0} {0}::{1}::{0}({2}) {{\n"
-              "  Context &Ctx = {3};\n",
-          jclass, cname, get_argument_decl_list(cons, drop_ctx), context_source);
-  } else {
-    string base_class = (!subclass) ? "IslBase" : type2cpp(super);
-    print(os, "// {3}\n"
-              "inline {0}::{0}({2}) : {4}({5}, (void *)NULL) {{\n",
-          jclass, cname, get_argument_decl_list(cons, drop_ctx), fullname,
-          base_class, context_source);
-  }
-
-  for (int i = drop_ctx; i < num_params; ++i) {
-    ParmVarDecl *param = cons->getParamDecl(i);
-    prepare_argument(os, param);
-  }
-
-  print(os, "  Ctx.lock();\n"
-            "  {0} *That = {1}({2});\n",
-        clazz.name, fullname, get_argument_list(cons, drop_ctx));
-
-  printHandleErrorCall(os, 2, fullname + " returned a NULL pointer.");
-  print(os, "  Ctx.unlock;\n");
-
-  if (asNamedConstructor) {
+              "  Context &Ctx = {3};\n"
+              "{4}"
+              "  Ctx.lock();\n"
+              "  {5} *That = {6}({7});\n"
+              "{8}"
+              "  Ctx.unlock;\n",
+          jclass, cname, argument_decl_list, context_source, prepare_os.str(),
+          clazz.name, fullname, argument_list, handle_error_os.str());
     if (can_copy(clazz)) {
       print(os, "  return {0}(Ctx, That);\n", jclass);
     } else {
@@ -1303,12 +1301,24 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
             jclass);
     }
   } else {
+    string base_class = (!subclass) ? "IslBase" : type2cpp(super);
+    print(os, "// {3}\n"
+              "inline {0}::{0}({2}) : {4}({5}, (void *)NULL) {{\n"
+              "{6}"
+              "  Ctx.lock();\n"
+              "  {7} *That = {3}({8});\n"
+              "{9}"
+              "  Ctx.unlock;\n",
+          jclass, cname, argument_decl_list, fullname, base_class,
+          context_source, prepare_os.str(), clazz.name, argument_list,
+          handle_error_os.str());
     if (can_copy(clazz)) {
       print(os, "  This = That;\n");
     } else {
       print(os, "  This = std::shared_ptr<ptr>(new ptr(That));\n");
     }
   }
+
   print(os, "}}\n");
 }
 
