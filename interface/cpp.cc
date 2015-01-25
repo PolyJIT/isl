@@ -1108,6 +1108,16 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
             "  {2} {3}({4}) const;\n",
         method->getNameAsString(), comment.str(), retName, cname,
         get_argument_decl_list(method, 1));
+
+  os << endl;
+  print(os, "  ///@brief Generated from:\n"
+            "  ///       {0}\n"
+            "  ///\n"
+            "{1}"
+            "  ///\n"
+            "  void {2}Inplace({3}) const;\n",
+        method->getNameAsString(), comment.str(), cname,
+        get_argument_decl_list(method, 1));
 }
 
 /**
@@ -1167,6 +1177,10 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
     handle_result_argument(result_os, "Ctx", param);
   }
 
+  ostringstream handle_error_os;
+  printHandleErrorCall(handle_error_os, 2,
+                       fullname + " returned a NULL pointer.");
+
   // Handle return
   ostringstream return_os;
   handle_return(return_os, method, "res");
@@ -1189,6 +1203,24 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
         prepare_os.str(), retNameC, fullname,
         isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
         param_os.str(), result_os.str(), return_os.str());
+
+  os << endl;
+  print(os, "/// @brief inplace variant\n"
+            "inline void {1}::{0}Inplace({2}) const {{\n"
+            "  Ctx.lock();\n"
+            "  // Prepare arguments\n"
+            "{3}"
+            "  // Call {5}\n"
+            "  This = {5}(This{7});\n"
+            "  // Handle result argument(s)\n"
+            "{8}"
+            "  Ctx.unlock();\n"
+            "{9}"
+            "}}\n",
+        cname, p_name, get_argument_decl_list(method, 1),
+        prepare_os.str(), retNameC, fullname,
+        isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
+        param_os.str(), result_os.str(), handle_error_os.str());
 }
 
 /**
