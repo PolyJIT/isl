@@ -1437,7 +1437,7 @@ void cpp_generator::print_isl_ctx_class() {
         "#include <mutex>\n"
         "#include <isl/options.h>\n"
         "\n"
-        "namespace isl{\n"
+        "namespace isl{{\n"
         "class Context {{\n"
         "private:\n"
         "  isl_ctx *This;\n"
