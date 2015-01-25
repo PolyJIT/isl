@@ -1085,25 +1085,29 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
   string retName = rettype2cpp(method);
   int num_params = method->getNumParams();
 
-  os << endl;
-  print(os, "  ///@brief Generated from:\n"
-            "  ///       {0}\n"
-            "  ///\n",
-        method->getNameAsString());
+  // Create a comment block for our parameters.
+  ostringstream comment;
   for (int i = 1; i < num_params; ++i) {
     ParmVarDecl *param = method->getParamDecl(i);
     string p_name = param->getNameAsString();
     bool is_give = is_isl_result_argument(param->getOriginalType());
 
     if (is_give)
-      print(os, "  ///@param {0} output parameter (isl_give)\n", p_name);
+      print(comment, "  ///@param {0} output parameter (isl_give)\n", p_name);
     else
-      print(os, "  ///@param {0}\n", p_name);
+      print(comment, "  ///@param {0}\n", p_name);
   }
-  print(os, "  ///\n"
-            "  ///@return A new {0}\n"
-            "  {0} {1}({2}) const;\n",
-        retName, cname, get_argument_decl_list(method, 1));
+
+  os << endl;
+  print(os, "  ///@brief Generated from:\n"
+            "  ///       {0}\n"
+            "  ///\n"
+            "{1}"
+            "  ///\n"
+            "  ///@return A new {2}\n"
+            "  {2} {3}({4}) const;\n",
+        method->getNameAsString(), comment.str(), retName, cname,
+        get_argument_decl_list(method, 1));
 }
 
 /**
@@ -1141,15 +1145,11 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
   string retNameC = method->getReturnType().getAsString();
   int num_params = method->getNumParams();
 
-  os << endl;
-  print(os, "inline {0} {2}::{1}({3}) const {{\n"
-            "  Ctx.lock();\n"
-            "  {2} self = as{2}();\n",
-        retName, cname, p_name, get_argument_decl_list(method, 1));
-
+  // Prepare arguments
+  ostringstream prepare_os;
   for (int i = 1; i < num_params; ++i) {
     ParmVarDecl *param = method->getParamDecl(i);
-    prepare_argument(os, param);
+    prepare_argument(prepare_os, param);
   }
 
   // Create argument list
@@ -1160,18 +1160,35 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
     print_argument(param_os, param);
   }
 
-  print(os, "  {0} res = {1}({2}{3});\n", retNameC, fullname,
-        isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-        param_os.str());
-
+  // Handle result args
+  ostringstream result_os;
   for (int i = 1; i < num_params; ++i) {
     const ParmVarDecl *param = method->getParamDecl(i);
-    handle_result_argument(os, "Ctx", param);
+    handle_result_argument(result_os, "Ctx", param);
   }
 
-  print(os, "  Ctx.unlock();\n");
-  handle_return(os, method, "res");
-  print(os, "}}\n");
+  // Handle return
+  ostringstream return_os;
+  handle_return(return_os, method, "res");
+
+  os << endl;
+  print(os, "inline {0} {2}::{1}({3}) const {{\n"
+            "  Ctx.lock();\n"
+            "  {2} self = as{2}();\n"
+            "  // Prepare arguments\n"
+            "{4}"
+            "  // Call {6}\n"
+            "  {5} res = {6}({7}{8});\n"
+            "  // Handle result argument(s)\n"
+            "{9}"
+            "  Ctx.unlock();\n"
+            "  // Handle return\n"
+            "{10}"
+            "}}\n",
+        retName, cname, p_name, get_argument_decl_list(method, 1),
+        prepare_os.str(), retNameC, fullname,
+        isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
+        param_os.str(), result_os.str(), return_os.str());
 }
 
 /**
