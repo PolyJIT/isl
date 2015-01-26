@@ -303,8 +303,9 @@ static void print_ptr_wrapper(ostream &os, string name) {
   print(os, "  struct ptr {{\n"
             "    {0} *p;\n"
             "    explicit ptr({0} *p) : p(p) {{}}\n"
-            "    ~ptr() {\n"
-            "      {0}_free(p); }}\n"
+            "    ~ptr() {{\n"
+            "      {0}_free(p);\n"
+            "    }}\n"
             "    ptr(const ptr &other) = delete;\n"
             "    ptr &operator=(const ptr &other) = delete;\n"
             "    ptr(ptr && other) = delete;\n"
@@ -571,7 +572,7 @@ public:
             name, p_name);
     else
       print(os, "inline {0} *{1}::Give() {{\n"
-                "  {0} *res = This.get()-p;\n"
+                "  {0} *res = This.get()->p;\n"
                 "  This.get()->p = nullptr;\n"
                 "  This.reset();\n"
                 "  return res;\n"
@@ -680,7 +681,7 @@ string cpp_generator::paramtype2jna(QualType ty, bool wrapperTypes,
                                     bool isBool) {
   string type;
   if (is_isl_ctx(ty))
-    type = "Context.Ptr";
+    type = "Context &";
   else if (is_isl_result_argument(ty)) {
     type = cppTypeName(ty->getPointeeType()) + ".Ptr[]";
   } else if (is_isl_class(ty)) {
@@ -1109,15 +1110,17 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
         method->getNameAsString(), comment.str(), retName, cname,
         get_argument_decl_list(method, 1));
 
-  os << endl;
-  print(os, "  ///@brief Generated from:\n"
-            "  ///       {0}\n"
-            "  ///\n"
-            "{1}"
-            "  ///\n"
-            "  void {2}Inplace({3}) const;\n",
-        method->getNameAsString(), comment.str(), cname,
-        get_argument_decl_list(method, 1));
+  if (is_isl_class(method->getReturnType())) {
+    os << endl;
+    print(os, "  ///@brief Generated from:\n"
+              "  ///       {0}\n"
+              "  ///\n"
+              "{1}"
+              "  ///\n"
+              "  void {2}Inplace({3});\n",
+          method->getNameAsString(), comment.str(), cname,
+          get_argument_decl_list(method, 1));
+  }
 }
 
 /**
@@ -1204,23 +1207,25 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
         isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
         param_os.str(), result_os.str(), return_os.str());
 
-  os << endl;
-  print(os, "/// @brief inplace variant\n"
-            "inline void {1}::{0}Inplace({2}) const {{\n"
-            "  Ctx.lock();\n"
-            "  // Prepare arguments\n"
-            "{3}"
-            "  // Call {5}\n"
-            "  This = {5}(This{7});\n"
-            "  // Handle result argument(s)\n"
-            "{8}"
-            "  Ctx.unlock();\n"
-            "{9}"
-            "}}\n",
-        cname, p_name, get_argument_decl_list(method, 1),
-        prepare_os.str(), retNameC, fullname,
-        isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-        param_os.str(), result_os.str(), handle_error_os.str());
+  if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
+    os << endl;
+    print(os, "/// @brief inplace variant\n"
+              "inline void {1}::{0}Inplace({2}) {{\n"
+              "  Ctx.lock();\n"
+              "  // Prepare arguments\n"
+              "{3}"
+              "  // Call {5}\n"
+              "  This = (void *){5}(({4} *)This{7});\n"
+              "  // Handle result argument(s)\n"
+              "{8}"
+              "  Ctx.unlock();\n"
+              "{9}"
+              "}}\n",
+          cname, p_name, get_argument_decl_list(method, 1), prepare_os.str(),
+          clazz.name, fullname,
+          isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
+          param_os.str(), result_os.str(), handle_error_os.str());
+  }
 }
 
 /**
@@ -1261,11 +1266,11 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 
   if (asNamedConstructor) {
     print(os, "  static {0} {1}({2});\n", jclass, cname,
-          get_argument_decl_list(cons));
+          get_argument_decl_list(cons, drop_ctx));
   } else {
     print(os, "  /// {0}\n"
               "  explicit {1}({2});\n",
-          fullname, jclass, get_argument_decl_list(cons));
+          fullname, jclass, get_argument_decl_list(cons, drop_ctx));
   }
 }
 
@@ -1316,13 +1321,13 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 
   os << endl;
   if (asNamedConstructor) {
-    print(os, "inline {0} {0}::{1}::{0}({2}) {{\n"
+    print(os, "inline {0} {0}::{1}({2}) {{\n"
               "  Context &Ctx = {3};\n"
               "{4}"
               "  Ctx.lock();\n"
               "  {5} *That = {6}({7});\n"
               "{8}"
-              "  Ctx.unlock;\n",
+              "  Ctx.unlock();\n",
           jclass, cname, argument_decl_list, context_source, prepare_os.str(),
           clazz.name, fullname, argument_list, handle_error_os.str());
     if (can_copy(clazz)) {
@@ -1340,7 +1345,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
               "  Ctx.lock();\n"
               "  {7} *That = {3}({8});\n"
               "{9}"
-              "  Ctx.unlock;\n",
+              "  Ctx.unlock();\n",
           jclass, cname, argument_decl_list, fullname, base_class,
           context_source, prepare_os.str(), clazz.name, argument_list,
           handle_error_os.str());
@@ -1403,8 +1408,8 @@ void cpp_generator::print_isl_ctx_class() {
         "  }}\n"
         "\n"
         "  bool hasError() {{\n"
-        "    enum isl_error err = isl_ctx_las_error(This);\n"
-        "    int goe = isl_options_get_in_error(This);\n"
+        "    enum isl_error err = isl_ctx_last_error(This);\n"
+        "    int goe = isl_options_get_on_error(This);\n"
         "    return (err != isl_error_none) && goe != ISL_ON_ERROR_CONTINUE;\n"
         "  }}\n"
         "\n"
@@ -1519,7 +1524,7 @@ void cpp_generator::print_class(isl_class &clazz) {
         os,
         "  /// @brief Implement lt via pointer comparison of the\n"
         "  ///        wrapped isl objects.\n"
-        "  bool operator<(const {0} &RHS) const { return This < RHS.This; }\n",
+        "  bool operator<(const {0} &RHS) const {{ return This < RHS.This; }}\n",
         p_name);
     os << endl;
   }
@@ -1890,7 +1895,7 @@ void cpp_generator::print_isl_exception_class() {
             "\n"
             "public:\n"
             "  {0}(std::string What) : What(What) {{}}\n"
-            "  virtual const char *what() const throw() override {\n"
+            "  virtual const char *what() const throw() override {{\n"
             "    return What.c_str();\n"
             "  }}\n"
             "}};\n"
@@ -1928,7 +1933,7 @@ void cpp_generator::print_function_ptr_helper() {
         "template <const size_t _UniqueId, typename _Res, typename... "
         "_ArgTypes>\n"
         "struct fun_ptr_helper\n"
-        "{\n"
+        "{{\n"
         "public:\n"
         "  typedef std::function<_Res(_ArgTypes...)> function_type;\n"
         "\n"
