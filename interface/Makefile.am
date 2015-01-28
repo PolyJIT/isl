@@ -23,10 +23,10 @@ extract_interface_LDADD = \
 	$(CLANG_LIBS) $(CLANG_LDFLAGS)
 
 .PHONY: test
-test: extract_interface
+test: extract_interface$(EXEEXT)
 	./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h
 
-isl.py: extract_interface isl.py.top
+isl.py: extract_interface$(EXEEXT) isl.py.top
 	./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h \
 		--output-dir=python --language=python
 	cat isl.py.top python/isl.py > isl.py
