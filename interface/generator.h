@@ -63,6 +63,7 @@ protected:
 	bool is_constructor(Decl *decl);
 	void validate_constructor(QualType type, isl_class clazz,
 				  FunctionDecl *fdecl);
+	bool is_bool(const Decl *decl);
 	bool takes(Decl *decl);
 	isl_class &method2class(map<string, isl_class> &classes,
 				FunctionDecl *fd);

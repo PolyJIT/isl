@@ -37,6 +37,9 @@
 #ifndef __isl_subclass
 #define __isl_subclass(super)
 #endif
+#ifndef __isl_bool
+#define __isl_bool
+#endif
 
 #if defined(__cplusplus)
 extern "C" {

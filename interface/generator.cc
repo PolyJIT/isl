@@ -196,6 +196,11 @@ bool generator::is_constructor(Decl *decl)
 	return has_annotation(decl, "isl_constructor");
 }
 
+bool generator::is_bool(const Decl *decl)
+{
+	return has_annotation(decl, "isl_bool");
+}
+
 /* Is decl marked as consuming a reference?
  */
 bool generator::takes(Decl *decl)
