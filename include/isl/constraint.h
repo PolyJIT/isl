@@ -22,14 +22,16 @@
 extern "C" {
 #endif
 
-struct isl_constraint;
+struct __isl_export isl_constraint;
 typedef struct isl_constraint isl_constraint;
 
 ISL_DECLARE_LIST(constraint)
 
 isl_ctx *isl_constraint_get_ctx(__isl_keep isl_constraint *c);
 
+__isl_constructor
 __isl_give isl_constraint *isl_equality_alloc(__isl_take isl_local_space *ls);
+__isl_constructor
 __isl_give isl_constraint *isl_inequality_alloc(__isl_take isl_local_space *ls);
 
 struct isl_constraint *isl_constraint_cow(struct isl_constraint *c);
