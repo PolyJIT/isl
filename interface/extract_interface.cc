@@ -106,7 +106,7 @@ bool has_annotation(Decl *decl, const char *name)
 		return false;
 
 	AttrVec attrs = decl->getAttrs();
-	for (AttrVec::const_iterator i = attrs.begin() ; i != attrs.end(); ++i) {
+	for (AttrVec::const_iterator i = attrs.begin(); i != attrs.end(); ++i) {
 		const AnnotateAttr *ann = dyn_cast<AnnotateAttr>(*i);
 		if (!ann)
 			continue;
