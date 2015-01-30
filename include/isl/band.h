@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-struct __isl_export isl_band;
+struct __isl_export __isl_inplace isl_band;
 typedef struct isl_band isl_band;
 
 ISL_DECLARE_LIST(band)
