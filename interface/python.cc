@@ -46,11 +46,26 @@ static string type2python(string name)
 	return name.substr(4);
 }
 
+/* Reserved words we should not use.
+ */
+static const char *keywords[] = {"and", "for", "if", "in", "or", "print", 0};
+
+static string handlereservedname(string pname) {
+	for (const char **p = keywords; *p; ++p) {
+		if (pname.compare(*p) == 0) {
+			pname += "_";
+			break;
+		}
+	}
+	return pname;
+}
+
 /* Print python class for an isl enum type.
  */
 void python_generator::print_enum(const isl_enum &enu)
 {
 	string enum_name_str = type2python(enu.name);
+	enum_name_str = handlereservedname(enum_name_str);
 	const char *enum_name = enum_name_str.c_str();
 
 	printf("class %s:\n", enum_name);
@@ -67,6 +82,7 @@ void python_generator::print_enum(const isl_enum &enu)
 	map<string,int>::const_iterator it, e = enu.values.end();
 	for (it	= enu.values.begin(); it != e; ++it) {
 		string name_str = enu.name_without_enum(it->first);
+		name_str = handlereservedname(name_str);
 		const char *name = name_str.c_str();
 		printf("%s.%s = %s(\"%s\",%d)\n", enum_name, name,
 		       enum_name, name, it->second);
@@ -134,6 +150,13 @@ void python_generator::print_callback(QualType type, int arg)
 	printf("        cb = fn(cb_func)\n");
 }
 
+static string methodname2python(const isl_class &clazz,
+	const string &fullname)
+{
+	string pname = clazz.name_without_class(fullname);
+	return handlereservedname(pname);
+}
+
 /* Print a python method corresponding to the C function "method".
  * "subclass" is set if the method belongs to a class that is a subclass
  * of some other class ("super").
@@ -158,7 +181,7 @@ void python_generator::print_method(const isl_class &clazz,
 				    string super)
 {
 	string fullname = method->getName();
-	string cname = clazz.name_without_class(fullname);
+	string cname = methodname2python(clazz, fullname);
 	int num_params = method->getNumParams();
 	int drop_user = 0;
 
