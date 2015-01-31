@@ -38,10 +38,39 @@
 #include "extract_interface.h"
 #include "generator.h"
 
+/* Collect all functions that belong to a certain type,
+ * separating constructors from regular methods.
+ */
+generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions)
+{
+	set<RecordDecl *>::iterator it;
+	for (it = types.begin(); it != types.end(); ++it) {
+		RecordDecl *decl = *it;
+		string name = decl->getName();
+		classes[name].name = name;
+		classes[name].type = decl;
+	}
+
+	set<FunctionDecl *>::iterator in;
+	for (in = functions.begin(); in != functions.end(); ++in) {
+		isl_class *c = &method2class(classes, *in);
+		if (!c)
+			continue;
+		if (is_constructor(*in)) {
+			c->constructors.insert(*in);
+		} else {
+			FunctionDecl *method = *in;
+			string fullname = method->getName();
+			fullname = drop_type_suffix(fullname, method);
+			c->methods[fullname].insert(method);
+		}
+	}
+}
+
 /* Return a sequence of the types of which the given type declaration is
  * marked as being a subtype.
  */
-vector<string> find_superclasses(RecordDecl *decl)
+vector<string> generator::find_superclasses(RecordDecl *decl)
 {
 	vector<string> super;
 
@@ -70,7 +99,7 @@ vector<string> find_superclasses(RecordDecl *decl)
  * return the modified name (or the original name if
  * no modifications were made).
  */
-string drop_type_suffix(string name, FunctionDecl *method)
+string generator::drop_type_suffix(string name, FunctionDecl *method)
 {
 	int num_params;
 	ParmVarDecl *param;
@@ -95,14 +124,14 @@ string drop_type_suffix(string name, FunctionDecl *method)
 
 /* Is decl marked as being part of an overloaded method?
  */
-bool is_overload(Decl *decl)
+bool generator::is_overload(Decl *decl)
 {
 	return has_annotation(decl, "isl_overload");
 }
 
 /* Is "type" the type isl_bool?
  */
-bool is_isl_bool(QualType type)
+bool generator::is_isl_bool(QualType type)
 {
 	string s;
 
@@ -117,7 +146,7 @@ bool is_isl_bool(QualType type)
  * That is, is the first argument something other than
  * an instance of the class?
  */
-bool is_static(const isl_class &clazz, FunctionDecl *method)
+bool generator::is_static(const isl_class &clazz, FunctionDecl *method)
 {
 	ParmVarDecl *param = method->getParamDecl(0);
 	QualType type = param->getOriginalType();
@@ -131,7 +160,7 @@ bool is_static(const isl_class &clazz, FunctionDecl *method)
 /* Is the given type declaration marked as being a subtype of some other
  * type?  If so, return that other type in "super".
  */
-bool is_subclass(RecordDecl *decl, string &super)
+bool generator::is_subclass(RecordDecl *decl, string &super)
 {
 	if (!decl->hasAttrs())
 		return false;
@@ -155,14 +184,14 @@ bool is_subclass(RecordDecl *decl, string &super)
 
 /* Is decl marked as a constructor?
  */
-bool is_constructor(Decl *decl)
+bool generator::is_constructor(Decl *decl)
 {
 	return has_annotation(decl, "isl_constructor");
 }
 
 /* Is decl marked as consuming a reference?
  */
-bool takes(Decl *decl)
+bool generator::takes(Decl *decl)
 {
 	return has_annotation(decl, "isl_take");
 }
@@ -170,7 +199,7 @@ bool takes(Decl *decl)
 /* Return the class that has a name that matches the initial part
  * of the namd of function "fd".
  */
-isl_class &method2class(map<string, isl_class> &classes,
+isl_class &generator::method2class(map<string, isl_class> &classes,
 	FunctionDecl *fd)
 {
 	string best;
@@ -187,7 +216,7 @@ isl_class &method2class(map<string, isl_class> &classes,
 
 /* Is "type" the type "isl_ctx *"?
  */
-bool is_isl_ctx(QualType type)
+bool generator::is_isl_ctx(QualType type)
 {
 	if (!type->isPointerType())
 		return 0;
@@ -200,7 +229,7 @@ bool is_isl_ctx(QualType type)
 
 /* Is the first argument of "fd" of type "isl_ctx *"?
  */
-bool first_arg_is_isl_ctx(FunctionDecl *fd)
+bool generator::first_arg_is_isl_ctx(FunctionDecl *fd)
 {
 	ParmVarDecl *param;
 
@@ -213,7 +242,7 @@ bool first_arg_is_isl_ctx(FunctionDecl *fd)
 
 /* Is "type" that of a pointer to an isl_* structure?
  */
-bool is_isl_type(QualType type)
+bool generator::is_isl_type(QualType type)
 {
 	if (type->isPointerType()) {
 		string s = type->getPointeeType().getAsString();
@@ -225,7 +254,7 @@ bool is_isl_type(QualType type)
 
 /* Is "type" that of a pointer to a function?
  */
-bool is_callback(QualType type)
+bool generator::is_callback(QualType type)
 {
 	if (!type->isPointerType())
 		return false;
@@ -235,7 +264,7 @@ bool is_callback(QualType type)
 
 /* Is "type" that of "char *" of "const char *"?
  */
-bool is_string(QualType type)
+bool generator::is_string(QualType type)
 {
 	if (type->isPointerType()) {
 		string s = type->getPointeeType().getAsString();
@@ -248,7 +277,7 @@ bool is_string(QualType type)
 /* Return the name of the type that "type" points to.
  * The input "type" is assumed to be a pointer type.
  */
-string extract_type(QualType type)
+string generator::extract_type(QualType type)
 {
 	if (type->isPointerType())
 		return type->getPointeeType().getAsString();

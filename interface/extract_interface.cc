@@ -69,6 +69,7 @@
 #include <clang/Sema/Sema.h>
 
 #include "extract_interface.h"
+#include "generator.h"
 #include "python.h"
 
 using namespace std;
@@ -393,7 +394,8 @@ int main(int argc, char *argv[])
 	ParseAST(*sema);
 	Diags.getClient()->EndSourceFile();
 
-	generate_python(consumer.types, consumer.functions);
+	python_generator gen(consumer.types, consumer.functions);
+	gen.generate();
 
 	delete sema;
 	delete Clang;
