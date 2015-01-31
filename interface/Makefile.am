@@ -39,7 +39,7 @@ SCALAC_FLAGS=-cp isl.jar
 test: python/isl.py
 	cat python/isl.py
 
-python/isl.py: extract_interface
+python/isl.py: extract_interface$(EXEEXT)
 	./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h \
 		--output-dir=python --language=python
 
