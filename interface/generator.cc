@@ -38,6 +38,44 @@
 #include "extract_interface.h"
 #include "generator.h"
 
+/* Issue a warning, if the type of the first argument of the method does not
+ * match the class of the method.
+ */
+void generator::validate_this(const isl_class &clazz, FunctionDecl *fdecl)
+{
+	unsigned n_params = fdecl->getNumParams();
+	bool no_this = false;
+	if (n_params == 0)
+		no_this = true;
+	if (n_params >= 1) {
+		QualType t =
+		    fdecl->getParamDecl(0)->getOriginalType();
+		if (!is_isl_class(t) ||
+		    extract_type(t) != clazz.name)
+			no_this = true;
+	}
+	if (no_this) {
+		cerr << "Warning: method '"
+		     << fdecl->getNameAsString()
+		     << "' does not have suitable first "
+			"argument (for 'this')." << endl;
+	}
+}
+
+/* Issue a warning, if the return type of the fdecl matches the class name
+ * of clazz.
+ */
+void generator::validate_constructor(const isl_class &clazz,
+	FunctionDecl *fdecl)
+{
+	QualType type = fdecl->getReturnType();
+	if (!is_isl_class(type) || extract_type(type) != clazz.name) {
+		cerr << "Warning: constructor '" << fdecl->getNameAsString()
+		     << "' does not return object of expected "
+			"class '" << clazz.name << "'." << endl;
+	}
+}
+
 /* Collect all functions that belong to a certain type,
  * separating constructors from regular methods and collect all enums.
  */
@@ -54,11 +92,15 @@ generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
 
 	set<FunctionDecl *>::iterator in;
 	for (in = functions.begin(); in != functions.end(); ++in) {
-		isl_class &c = method2class(classes, *in);
-		if (is_constructor(*in))
-			c.constructors.insert(*in);
-		else
-			c.methods.insert(*in);
+		FunctionDecl *fdecl = *in;
+		isl_class &c = method2class(classes, fdecl);
+		if (is_constructor(fdecl)) {
+			validate_constructor(c, fdecl);
+			c.constructors.insert(fdecl);
+		} else {
+			validate_this(c, fdecl);
+			c.methods.insert(fdecl);
+		}
 	}
 
 	set<EnumDecl *>::const_iterator ie;
