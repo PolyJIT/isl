@@ -196,18 +196,6 @@ bool generator::first_arg_is_isl_ctx(FunctionDecl *fd)
 	return is_isl_ctx(param->getOriginalType());
 }
 
-/* Is "type" that of a pointer to an isl_* structure?
- */
-bool generator::is_isl_type(QualType type)
-{
-	if (type->isPointerType()) {
-		string s = type->getPointeeType().getAsString();
-		return s.substr(0, 4) == "isl_";
-	}
-
-	return false;
-}
-
 /* Is "type" that of a pointer to a function?
  */
 bool generator::is_callback(QualType type)
@@ -231,11 +219,40 @@ bool generator::is_string(QualType type)
 }
 
 /* Return the name of the type that "type" points to.
- * The input "type" is assumed to be a pointer type.
  */
 string generator::extract_type(QualType type)
 {
-	if (type->isPointerType())
-		return type->getPointeeType().getAsString();
+	if (is_isl_class(type)) {
+		const RecordType *rt = dyn_cast<RecordType>(
+		    type->getPointeeType().getCanonicalType());
+		return rt ? rt->getDecl()->getNameAsString()
+			  : type->getPointeeType().getAsString();
+	}
 	assert(0);
+}
+
+/* Is "type" that of a pointer to an isl_* structure?
+ */
+bool generator::is_isl_class(QualType type)
+{
+	if (!type->isPointerType())
+		return false;
+	type = type->getPointeeType();
+	bool isClass = classes.find(type.getAsString()) != classes.end();
+	if (!isClass) {
+		const RecordType *rt =
+		    dyn_cast<RecordType>(type.getCanonicalType());
+		isClass = rt &&
+			  classes.find(rt->getDecl()->getNameAsString()) !=
+			      classes.end();
+	}
+	return isClass;
+}
+
+/* Is "type" an isl type, i.e., an isl_class, or, in the future, an
+ * isl_enum (not implemented yet).
+ */
+bool generator::is_isl_type(QualType type)
+{
+	return is_isl_class(type);
 }

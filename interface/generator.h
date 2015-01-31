@@ -62,6 +62,7 @@ protected:
 	bool is_isl_type(QualType type);
 	bool is_callback(QualType type);
 	bool is_string(QualType type);
+	bool is_isl_class(QualType type);
 	string extract_type(QualType type);
 };
 
