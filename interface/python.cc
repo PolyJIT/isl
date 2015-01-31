@@ -187,7 +187,8 @@ void python_generator::print_method(const isl_class &clazz,
 		printf(", None");
 	printf(")\n");
 
-	if (is_isl_type(method->getReturnType())) {
+	QualType rettype = method->getReturnType();
+	if (is_isl_class(rettype)) {
 		string type;
 		type = type2python(extract_type(method->getReturnType()));
 		printf("        return %s(ctx=arg0.ctx, ptr=res)\n",
@@ -240,10 +241,11 @@ void python_generator::print_constructor(const isl_class &clazz,
 		ParmVarDecl *param = cons->getParamDecl(i);
 		if (i)
 			printf(", ");
-		if (is_isl_type(param->getOriginalType())) {
+		QualType ty = param->getOriginalType();
+		if (is_isl_class(ty)) {
 			if (takes(param)) {
 				string type;
-				type = extract_type(param->getOriginalType());
+				type = extract_type(ty);
 				printf("isl.%s_copy(args[%d].ptr)",
 					type.c_str(), i - drop_ctx);
 			} else
