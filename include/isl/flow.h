@@ -131,6 +131,7 @@ __isl_give isl_printer *isl_printer_print_union_flow(
 	__isl_take isl_printer *p, __isl_keep isl_union_flow *flow);
 __isl_give char *isl_union_flow_to_str(__isl_keep isl_union_flow *flow);
 
+__isl_export
 int isl_union_map_compute_flow(__isl_take isl_union_map *sink,
 	__isl_take isl_union_map *must_source,
 	__isl_take isl_union_map *may_source,
