@@ -27,6 +27,13 @@ struct isl_class {
 	set<FunctionDecl *> methods;
 };
 
+struct isl_enum {
+	string name;
+	map<string,int> values;
+
+	string name_without_enum(const string &valname) const;
+};
+
 /* Base class for interface generators.
  */
 class generator {
@@ -38,9 +45,11 @@ private:
 
 protected:
 	map<string,isl_class> classes;
+	map<string,isl_enum>  enums;
 
 public:
-	generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions);
+	generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
+		  set<EnumDecl *> &enums);
 	virtual ~generator();
 
 	virtual void generate() = 0;
@@ -63,7 +72,10 @@ protected:
 	bool is_callback(QualType type);
 	bool is_string(QualType type);
 	bool is_isl_class(QualType type);
+	bool is_isl_enum(QualType type);
 	string extract_type(QualType type);
+
+	const isl_enum &find_enum(QualType type);
 };
 
 #endif
