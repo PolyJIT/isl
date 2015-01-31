@@ -73,6 +73,34 @@ static void print_method_header(bool is_static, const string &name, int n_arg)
 	printf("):\n");
 }
 
+/* Print python class for an isl enum type.
+ */
+void python_generator::print_enum(const isl_enum &enu)
+{
+	string enum_name_str = type2python(enu.name);
+	const char *enum_name = enum_name_str.c_str();
+
+	printf("class %s:\n", enum_name);
+	printf("    def __init__(self,name,value):\n");
+	printf("        self.name  = name\n");
+	printf("        self.value = value\n");
+	printf("    def __str__(self):\n");
+	printf("        return self.name\n");
+	printf("    def __repr__(self):\n");
+	printf("        return \"<isl.%s.%%s: %%d>\" %% "
+	       "(self.name, self.value)\n", enum_name);
+	printf("\n");
+
+	map<string,int>::const_iterator it, e = enu.values.end();
+	for (it	= enu.values.begin(); it != e; ++it) {
+		string name_str = enu.name_without_enum(it->first);
+		const char *name = name_str.c_str();
+		printf("%s.%s = %s(\"%s\",%d)\n", enum_name, name,
+		       enum_name, name, it->second);
+	}
+	printf("\n");
+}
+
 /* Construct a wrapper for a callback argument (at position "arg").
  * Assign the wrapper to "cb".  We assume here that a function call
  * has at most one callback argument.
@@ -141,7 +169,9 @@ void python_generator::print_arg_in_call(FunctionDecl *fd, int arg, int skip)
 	QualType type = param->getOriginalType();
 	int idx = arg - skip;
 
-	if (is_callback(type)) {
+	if (is_isl_enum(type))
+		printf(", arg%d.value", idx);
+	else if (is_callback(type)) {
 		printf("cb");
 	} else if (is_isl_class(type)) {
 		if (takes(param)) {
@@ -395,7 +425,9 @@ void python_generator::print_constructor(const isl_class &clazz,
 					type.c_str(), i - drop_ctx);
 			} else
 				printf("args[%d].ptr", i - drop_ctx);
-		} else
+		} else if (is_isl_enum(ty))
+			printf("args[%d].value", i - drop_ctx);
+		else
 			printf("args[%d]", i - drop_ctx);
 	}
 	printf(")\n");
@@ -562,8 +594,12 @@ python_generator::python_generator(set<RecordDecl *> &types,
 void python_generator::generate()
 {
 	map<string, isl_class> classes;
+	map<string, isl_enum>::const_iterator ei;
 	map<string, isl_class>::iterator ci;
 	done.clear();
+
+	for (ei = enums.begin(); ei != enums.end(); ++ei)
+		print_enum(ei->second);
 
 	for (ci = classes.begin(); ci != classes.end(); ++ci) {
 		if (done.find(ci->first) == done.end())

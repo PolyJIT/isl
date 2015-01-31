@@ -34,6 +34,7 @@ private:
 	void print_arg_in_call(FunctionDecl *fd, int arg, int skip);
 	void print_restype(FunctionDecl *fd);
 	void print_argtypes(FunctionDecl *fd);
+	void print_enum(const isl_enum &e);
 
 	/* Redirect calls to "printf" in the print* methods to the
 	 * output stream "os"
