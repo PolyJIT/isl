@@ -31,7 +31,8 @@ private:
 	void print_method_overload(const isl_class &clazz, FunctionDecl *method,
 				   vector<string> super);
 	string drop_type_suffix(string name, FunctionDecl *method);
-	void print_arg_in_call(FunctionDecl *fd, int arg, int skip);
+	void print_arg_in_call(const isl_class &clazz, FunctionDecl *fd,
+			       int arg, int skip);
 	void print_restype(FunctionDecl *fd);
 	void print_argtypes(FunctionDecl *fd);
 	void print_enum(const isl_enum &e);

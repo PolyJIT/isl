@@ -480,3 +480,25 @@ string isl_enum::name_without_enum(const string &valname) const
 	}
 	return valname.substr(last + 1);
 }
+
+/* Check if there is an isl_printer_print_* method for an isl class
+ */
+bool generator::can_be_printed(const isl_class &clazz) const
+{
+	map<string,isl_class>::const_iterator it = classes.find("isl_printer");
+	if (it == classes.end())
+		return false;
+
+	const string print_method =
+		string("isl_printer_print") + clazz.name.substr(3);
+
+	const map<string, set<FunctionDecl *> > &s = it->second.methods;
+	for (auto &MethodKV : s) {
+		for (auto *f : MethodKV.second) {
+			if (f->getName() == print_method)
+				return true;
+		}
+	}
+
+	return false;
+}

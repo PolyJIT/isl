@@ -163,7 +163,8 @@ void python_generator::print_callback(QualType type, int arg)
  * Otherwise, if the argument is a pointer, then pass this pointer itself.
  * Otherwise, pass the argument directly.
  */
-void python_generator::print_arg_in_call(FunctionDecl *fd, int arg, int skip)
+void python_generator::print_arg_in_call(const isl_class &clazz,
+	FunctionDecl *fd, int arg, int skip)
 {
 	ParmVarDecl *param = fd->getParamDecl(arg);
 	QualType type = param->getOriginalType();
@@ -176,7 +177,11 @@ void python_generator::print_arg_in_call(FunctionDecl *fd, int arg, int skip)
 	} else if (is_isl_class(type)) {
 		if (takes(param)) {
 			string type_s = extract_type(type);
-			printf(", isl.%s_copy(arg%d.ptr)", type_s.c_str(), idx);
+			if (clazz.name.compare("isl_printer") == 0)
+				printf("arg0.makePtr0()");
+			else
+				printf(", isl.%s_copy(arg%d.ptr)",
+				       type_s.c_str(), idx);
 		} else
 			printf(", arg%d.ptr", idx);
 	} else
@@ -268,10 +273,10 @@ void python_generator::print_method(const isl_class &clazz,
 	if (drop_ctx)
 		printf("ctx");
 	else
-		print_arg_in_call(method, 0, 0);
+		print_arg_in_call(clazz, method, 0, 0);
 	for (int i = 1; i < num_params - drop_user; ++i) {
 		printf(", ");
-		print_arg_in_call(method, i, drop_ctx);
+		print_arg_in_call(clazz, method, i, drop_ctx);
 	}
 	if (drop_user)
 		printf(", None");
@@ -337,10 +342,10 @@ void python_generator::print_method_overload(const isl_class &clazz,
 	}
 	printf(":\n");
 	printf("            res = isl.%s(", fullname.c_str());
-	print_arg_in_call(method, 0, 0);
+	print_arg_in_call(clazz, method, 0, 0);
 	for (int i = 1; i < num_params; ++i) {
 		printf(", ");
-		print_arg_in_call(method, i, 0);
+		print_arg_in_call(clazz, method, i, 0);
 	}
 	printf(")\n");
 	type = type2python(extract_type(method->getReturnType()));
@@ -550,19 +555,25 @@ void python_generator::print(const isl_class &clazz)
 	printf("    def __del__(self):\n");
 	printf("        if hasattr(self, 'ptr'):\n");
 	printf("            isl.%s_free(self.ptr)\n", name.c_str());
-	printf("    def __str__(self):\n");
-	printf("        ptr = isl.%s_to_str(self.ptr)\n", name.c_str());
-	printf("        res = str(cast(ptr, c_char_p).value)\n");
-	printf("        libc.free(ptr)\n");
-	printf("        return res\n");
-	printf("    def __repr__(self):\n");
-	printf("        s = str(self)\n");
-	printf("        if '\"' in s:\n");
-	printf("            return 'isl.%s(\"\"\"%%s\"\"\")' %% s\n",
-		p_name.c_str());
-	printf("        else:\n");
-	printf("            return 'isl.%s(\"%%s\")' %% s\n",
-		p_name.c_str());
+	if (can_be_printed(clazz)) {
+		printf("    def __str__(self):\n");
+		printf("        ptr = isl.%s_to_str(self.ptr)\n", name.c_str());
+		printf("        res = str(cast(ptr, c_char_p).value)\n");
+		printf("        libc.free(ptr)\n");
+		printf("        return res\n");
+		printf("    def __repr__(self):\n");
+		printf("        s = str(self)\n");
+		printf("        if '\"' in s:\n");
+		printf("            return 'isl.%s(\"\"\"%%s\"\"\")' %% s\n",
+		       p_name.c_str());
+		printf("        else:\n");
+		printf("            return 'isl.%s(\"%%s\")' %% s\n",
+		       p_name.c_str());
+		printf("    def makePtr0(self):\n");
+		printf("        ptr = self.ptr\n");
+		printf("        delattr(self, 'ptr')\n");
+		printf("        return ptr;\n");
+	}
 
 	for (auto &MethodKV : clazz.methods)
 		print_method(clazz, MethodKV.first, MethodKV.second, super);
