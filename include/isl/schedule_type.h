@@ -1,6 +1,8 @@
 #ifndef ISL_SCHEDULE_TYPE_H
 #define ISL_SCHEDULE_TYPE_H
 
+#include <isl/ctx.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -23,7 +25,7 @@ enum isl_schedule_node_type {
 struct isl_schedule_node;
 typedef struct isl_schedule_node isl_schedule_node;
 
-struct isl_schedule;
+struct __isl_export isl_schedule;
 typedef struct isl_schedule isl_schedule;
 
 #if defined(__cplusplus)
