@@ -100,7 +100,7 @@ static const char *ResourceDir =
  *
  *	__attribute__((annotate("name")))
  */
-bool has_annotation(Decl *decl, const char *name)
+bool has_annotation(const Decl *decl, const char *name)
 {
 	if (!decl->hasAttrs())
 		return false;
@@ -383,6 +383,7 @@ int main(int argc, char *argv[])
 	PO.addMacroDef("__isl_export=__attribute__((annotate(\"isl_export\")))");
 	PO.addMacroDef("__isl_constructor=__attribute__((annotate(\"isl_constructor\"))) __attribute__((annotate(\"isl_export\")))");
 	PO.addMacroDef("__isl_subclass(super)=__attribute__((annotate(\"isl_subclass(\" #super \")\"))) __attribute__((annotate(\"isl_export\")))");
+	PO.addMacroDef("__isl_bool=__attribute__((annotate(\"isl_bool\")))");
 
 	create_preprocessor(Clang);
 	Preprocessor &PP = Clang->getPreprocessor();
