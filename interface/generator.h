@@ -79,6 +79,8 @@ protected:
 	string extract_type(QualType type);
 
 	const isl_enum &find_enum(QualType type);
+
+	bool can_be_printed(const isl_class &clazz) const;
 };
 
 #endif
