@@ -105,6 +105,7 @@ isl_bool isl_val_is_divisible_by(__isl_keep isl_val *v1,
 
 __isl_constructor
 __isl_give isl_val *isl_val_read_from_str(isl_ctx *ctx, const char *str);
+__isl_export
 __isl_give isl_printer *isl_printer_print_val(__isl_take isl_printer *p,
 	__isl_keep isl_val *v);
 void isl_val_dump(__isl_keep isl_val *v);
