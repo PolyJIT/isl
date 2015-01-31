@@ -283,6 +283,11 @@ void python_generator::print_method(const isl_class &clazz,
 		type = type2python(extract_type(method->getReturnType()));
 		printf("        return %s(ctx=ctx, ptr=res)\n",
 			type.c_str());
+	} else if (is_string(rettype)) {
+		printf("        strres = str(cast(res, c_char_p).value)\n");
+		if (gives(method))
+			printf("        libc.free(res)\n");
+		printf("        return strres\n");
 	} else {
 		if (drop_user) {
 			printf("        if exc_info[0] != None:\n");
@@ -465,6 +470,9 @@ void python_generator::print_restype(FunctionDecl *fd)
 		printf("isl.%s.restype = c_void_p\n", fullname.c_str());
 	else if (is_isl_bool(type))
 		printf("isl.%s.restype = c_bool\n", fullname.c_str());
+	else if (is_string(type))
+		printf("isl.%s.restype = POINTER(c_char)\n",
+		       fullname.c_str());
 }
 
 /* Tell ctypes about the types of the arguments of the function "fd".
