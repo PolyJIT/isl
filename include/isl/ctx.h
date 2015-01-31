@@ -39,6 +39,9 @@
 #ifndef __isl_bool
 #define __isl_bool
 #endif
+#ifndef __isl_inplace
+#define __isl_inplace
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
