@@ -97,6 +97,11 @@ protected:
 	const isl_enum &find_enum(QualType type);
 
 	bool can_be_printed(const isl_class &clazz) const;
+
+	/* Check if the class represents objects that are updaten in-place
+	 * (such as isl_band).
+	 */
+	bool is_inplace(const isl_class &clazz) const;
 };
 
 #endif
