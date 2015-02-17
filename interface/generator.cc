@@ -50,7 +50,7 @@ void generator::validate_this(const isl_class &clazz, FunctionDecl *fdecl)
 	if (n_params >= 1) {
 		QualType t =
 		    fdecl->getParamDecl(0)->getOriginalType();
-		if (!is_isl_class(t) ||
+		if ((!is_isl_class(t) && !is_isl_ctx(t)) ||
 		    extract_type(t) != clazz.name)
 			no_this = true;
 	}
@@ -79,15 +79,24 @@ void generator::validate_constructor(const isl_class &clazz,
 string isl_class::name_without_class(const string &methodname) const
 {
 	string::size_type len = this->name.length();
+	string options = "isl_options_";
+	string::size_type options_len = options.length();
 	if (methodname.length() > len &&
 	    this->name.compare(methodname.substr(0, len)) == 0)
 		return methodname.substr(len+1);
+	else if (methodname.substr(0,options_len).compare(options) == 0)
+		return methodname.substr(options_len);
 	else if (methodname.substr(0,4).compare("isl_") == 0)
 		return methodname.substr(4);
 
 	cerr << "Could not derive method name for '" << methodname
 	     << "' in class '" << this->name << endl << "'.";
 	exit(1);
+}
+
+bool isl_class::is_ctx() const
+{
+	return name.compare("isl_ctx") == 0;
 }
 
 /* Collect all functions that belong to a certain type,
@@ -282,6 +291,10 @@ isl_class &generator::method2class(map<string, isl_class> &classes,
 		if (name.substr(0, ci->first.length()) == ci->first)
 			best = ci->first;
 	}
+
+	const string isloptions = "isl_options_";
+	if (name.substr(0, isloptions.length()) == isloptions)
+		best = "isl_ctx";
 
 	if (best.length() == 0)
 		cerr << "Cannot find class for method '" << name << "'."
