@@ -22,13 +22,15 @@ extract_interface_LDADD = \
 	-lclangAnalysis -lclangAST -lclangLex -lclangBasic -lclangDriver \
 	$(CLANG_LIBS) $(CLANG_LDFLAGS)
 
-test: extract_interface
+.PHONY: test
+test: python/isl.py
+	cat python/isl.py
+
+python/isl.py: extract_interface
 	./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h
 
-isl.py: extract_interface isl.py.top
-	(cat $(srcdir)/isl.py.top; \
-		./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h) \
-			> isl.py
+isl.py: isl.py.top python/isl.py
+	cat $(srcdir)/isl.py.top python/isl.py >isl.py
 
 dist-hook: isl.py
 	cp isl.py $(distdir)/
