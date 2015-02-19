@@ -7,6 +7,11 @@ class python_generator : public generator {
 private:
 	set<string> done;
 
+	/* The output stream the python generator writes the
+	 * generated code to.
+	 */
+	ostream &os;
+
 public:
 	python_generator(set<RecordDecl *> &types,
 			 set<FunctionDecl *> &functions);
@@ -28,4 +33,9 @@ private:
 	void print_arg_in_call(FunctionDecl *fd, int arg, int skip);
 	void print_restype(FunctionDecl *fd);
 	void print_argtypes(FunctionDecl *fd);
+
+	/* Redirect calls to "printf" in the print* methods to the
+	 * output stream "os"
+	 */
+	void printf(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 };
