@@ -27,7 +27,8 @@ test: python/isl.py
 	cat python/isl.py
 
 python/isl.py: extract_interface
-	./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h
+	./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h \
+		--output-dir=python --language=python
 
 isl.py: isl.py.top python/isl.py
 	cat $(srcdir)/isl.py.top python/isl.py >isl.py
