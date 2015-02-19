@@ -2,9 +2,16 @@
 #define ISL_INTERFACE_GENERATOR_H
 
 #include <clang/AST/Decl.h>
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <set>
+#include <sstream>
 #include <string>
+
+#include <cerrno>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 using namespace clang;
 using namespace std;
@@ -24,13 +31,23 @@ struct isl_class {
 /* Base class for interface generators.
  */
 class generator {
+private:
+	/* Mapping from file names (for generated files) to
+	 * string output streams for the file contents.
+	 */
+	map<string,ostringstream*> files;
+
 protected:
 	map<string,isl_class> classes;
 
 public:
 	generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions);
+	virtual ~generator();
 
 	virtual void generate() = 0;
+
+	/* Write generated files to the given directory. */
+	void write_generated_files(const string &directory);
 
 protected:
 	vector<string> find_superclasses(RecordDecl *decl);
@@ -38,6 +55,9 @@ protected:
 	bool is_overload(Decl *decl);
 	bool is_isl_bool(QualType type);
 	bool is_static(const isl_class &clazz, FunctionDecl *method);
+	/* Obtain the output stream for a given file name. */
+	ostream &outputfile(const string &name);
+
 	bool is_subclass(RecordDecl *decl, string &super);
 	bool is_constructor(Decl *decl);
 	bool takes(Decl *decl);
