@@ -34,6 +34,7 @@
 #include "isl_config.h"
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <iostream>
 #include <map>
 #include "python.h"
@@ -347,7 +348,7 @@ void python_generator::print(const isl_class &clazz)
 
 python_generator::python_generator(set<RecordDecl *> &types,
 				   set<FunctionDecl *> &functions)
-    : generator(types, functions)
+    : generator(types, functions), os(outputfile("isl.py"))
 {
 }
 
@@ -365,4 +366,25 @@ void python_generator::generate()
 		if (done.find(ci->first) == done.end())
 			print(ci->second);
 	}
+}
+
+/* The print* methods call "printf". Intercept these
+ * calls here and forward the strings printed to
+ * the output stream for the generated file.
+ */
+void python_generator::printf(const char *fmt, ...)
+{
+	va_list ap;
+	char *ptr;
+	size_t size;
+	FILE *f = open_memstream(&ptr, &size);
+
+	if (f == NULL) {
+		cerr << "Oops, could not open memstream." << endl;
+		exit(1);
+	}
+	va_start(ap, fmt);
+	vfprintf(f, fmt, ap);
+	fclose(f);
+	os << ptr;
 }

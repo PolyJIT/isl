@@ -392,6 +392,7 @@ int main(int argc, char *argv[])
 
 	python_generator gen(consumer.types, consumer.functions);
 	gen.generate();
+	gen.write_generated_files("python");
 
 	delete sema;
 	delete Clang;
