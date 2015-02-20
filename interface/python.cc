@@ -177,11 +177,15 @@ void python_generator::print_method(const isl_class &clazz,
 		QualType type = param->getOriginalType();
 		if (is_callback(type))
 			printf(", cb");
-		else if (takes(param)) {
-			string type_s = extract_type(type);
-			printf(", isl.%s_copy(arg%d.ptr)", type_s.c_str(), i);
+		else if (is_isl_class(type)) {
+			if (takes(param)) {
+				string type_s = extract_type(type);
+				printf(", isl.%s_copy(arg%d.ptr)",
+				       type_s.c_str(), i);
+			} else
+				printf(", arg%d.ptr", i);
 		} else
-			printf(", arg%d.ptr", i);
+			printf(", arg%d", i);
 	}
 	if (drop_user)
 		printf(", None");
@@ -230,7 +234,8 @@ void python_generator::print_constructor(const isl_class &clazz,
 			printf(" and args[%d].__class__ is %s",
 				i - drop_ctx, type.c_str());
 		} else
-			printf(" and type(args[%d]) == str", i - drop_ctx);
+			printf(" and type(args[%d]) == %s", i - drop_ctx,
+			       is_string(param->getOriginalType()) ? "str" : "int");
 	}
 	printf(":\n");
 	printf("            self.ctx = Context.getDefaultInstance()\n");
