@@ -94,6 +94,7 @@ protected:
 	bool is_callback(QualType type);
 	bool is_string(QualType type);
 	bool is_isl_class(QualType type);
+	bool is_unsigned(QualType type);
 	bool is_isl_enum(QualType type);
 	string extract_type(QualType type);
 	bool is_isl_result_argument(QualType type);

@@ -433,6 +433,12 @@ bool generator::is_string(QualType type)
 	return false;
 }
 
+bool generator::is_unsigned(QualType type)
+{
+	const BuiltinType *bt = dyn_cast<BuiltinType>(type.getCanonicalType());
+	return bt && bt->isUnsignedInteger();
+}
+
 /* Return the name of the type that "type" points to.
  */
 string generator::extract_type(QualType type)
