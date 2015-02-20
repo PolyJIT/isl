@@ -264,6 +264,14 @@ bool generator::takes(Decl *decl)
 	return has_annotation(decl, "isl_take");
 }
 
+/* Is decl marked as producing a reference?
+ */
+bool generator::gives(Decl *decl)
+{
+	return has_annotation(decl, "isl_give");
+}
+
+
 /* Return the class that has a name that matches the initial part
  * of the namd of function "fd".
  */

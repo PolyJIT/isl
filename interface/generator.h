@@ -70,6 +70,7 @@ protected:
 	bool is_subclass(RecordDecl *decl, string &super);
 	bool is_constructor(Decl *decl);
 	bool takes(Decl *decl);
+	bool gives(Decl *decl);
 	isl_class &method2class(map<string, isl_class> &classes,
 				FunctionDecl *fd);
 	bool is_isl_ctx(QualType type);
