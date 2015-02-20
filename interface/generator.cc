@@ -413,6 +413,15 @@ bool generator::is_isl_result_argument(QualType type)
 	return type->isPointerType() && is_isl_class(type->getPointeeType());
 }
 
+bool generator::has_user_pointer(FunctionDecl *fd)
+{
+	int num_params = fd->getNumParams();
+	if (num_params == 0)
+		return false;
+	QualType lastArgTy = fd->getParamDecl(num_params-1)->getOriginalType();
+	return lastArgTy->isPointerType() && lastArgTy->getPointeeType()->isVoidType();
+}
+
 /* Get the isl_enum that is associated to the given type.
  */
 const isl_enum &generator::find_enum(QualType type)
