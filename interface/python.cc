@@ -139,16 +139,18 @@ void python_generator::print_arg_in_call(FunctionDecl *fd, int arg, int skip)
 {
 	ParmVarDecl *param = fd->getParamDecl(arg);
 	QualType type = param->getOriginalType();
+	int idx = arg - skip;
+
 	if (is_callback(type)) {
 		printf("cb");
-	} else if (takes(param)) {
-		string type_s = extract_type(type);
-		printf("isl.%s_copy(arg%d.ptr)", type_s.c_str(), arg - skip);
-	} else if (type->isPointerType()) {
-		printf("arg%d.ptr", arg - skip);
-	} else {
-		printf("arg%d", arg - skip);
-	}
+	} else if (is_isl_class(type)) {
+		if (takes(param)) {
+			string type_s = extract_type(type);
+			printf(", isl.%s_copy(arg%d.ptr)", type_s.c_str(), idx);
+		} else
+			printf(", arg%d.ptr", idx);
+	} else
+		printf(", arg%d", idx);
 }
 
 /* Print a python method corresponding to the C function "method".
