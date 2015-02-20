@@ -97,6 +97,7 @@ protected:
 	bool is_isl_enum(QualType type);
 	string extract_type(QualType type);
 	bool is_isl_result_argument(QualType type);
+	bool has_user_pointer(FunctionDecl *fd);
 
 	const isl_enum &find_enum(QualType type);
 
