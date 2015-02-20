@@ -94,6 +94,7 @@ protected:
 	bool is_unsigned(QualType type);
 	bool is_isl_enum(QualType type);
 	string extract_type(QualType type);
+	bool is_callback_with_user(QualType type);
 	bool is_isl_result_argument(QualType type);
 	bool has_user_pointer(FunctionDecl *fd);
 

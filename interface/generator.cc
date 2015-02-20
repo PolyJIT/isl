@@ -424,6 +424,30 @@ bool generator::is_isl_enum(QualType type)
 	return isEnum;
 }
 
+/* Is 'type' a callback with user argument as the
+ * last parameter (i.e. "..(*fn)(..., void *)")?
+ */
+bool generator::is_callback_with_user(QualType type)
+{
+	if (!type->isPointerType())
+		return false;
+	type = type->getPointeeType();
+	const PointerType *pft = dyn_cast<PointerType>(type.getCanonicalType());
+	if (!pft)
+		return false;
+	const FunctionProtoType *ft =
+	    dyn_cast<FunctionProtoType>(pft->getPointeeType());
+	unsigned n_parms = ft->getNumArgs();
+	if (n_parms == 0)
+		return false;
+	const PointerType *pt =
+			dyn_cast<PointerType>(ft->getArgType(n_parms-1));
+	if (!pt)
+		return false;
+
+	return pt->getPointeeType()->isVoidType();
+}
+
 /* A parameter is a result argument for an isl class when it is a
  * pointer to a pointer to an isl object (i.e., "isl_map **").
  */
