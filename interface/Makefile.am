@@ -33,5 +33,10 @@ python/isl.py: extract_interface
 isl.py: isl.py.top python/isl.py
 	cat $(srcdir)/isl.py.top python/isl.py >isl.py
 
+.PHONY: clean
+clean:
+	$(RM) -rf python
+	$(RM) -f isl.py
+
 dist-hook: isl.py
 	cp isl.py $(distdir)/
