@@ -183,14 +183,7 @@ void python_generator::print_method(const isl_class &clazz,
 	string fullname = method->getName();
 	string cname = methodname2python(clazz, fullname);
 	int num_params = method->getNumParams();
-	int drop_user = 0;
-
-	for (int i = 1; i < num_params; ++i) {
-		ParmVarDecl *param = method->getParamDecl(i);
-		QualType type = param->getOriginalType();
-		if (is_callback(type))
-			drop_user = 1;
-	}
+	int drop_user = has_user_pointer(method) ? 1 : 0;;
 
 	printf("    def %s(arg0", cname.c_str());
 	for (int i = 1; i < num_params - drop_user; ++i)
