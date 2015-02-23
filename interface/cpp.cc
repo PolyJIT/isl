@@ -1719,6 +1719,8 @@ void cpp_generator::generateClasses()
 
 	map<string, isl_class>::iterator ci;
 	for (ci = classes.begin(); ci != classes.end(); ++ci) {
+		if (ci->second.is_ctx())
+			continue;
 		print_class(ci->second);
 		print_class_impl(ci->second);
 	}
