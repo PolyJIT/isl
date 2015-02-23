@@ -35,7 +35,7 @@ private:
   void handle_result_argument(ostream &os, const string &ctx,
                               const ParmVarDecl *param);
   void handle_enum_return(ostream &os, const string &res, const isl_enum &enu);
-  void handle_return(ostream &os, const FunctionDecl *method,
+  void handle_return(ostream &os, FunctionDecl *method,
                      const string &resVar);
   void print_method(ostream &os, isl_class &clazz, FunctionDecl *method,
                     bool subclass, string super);

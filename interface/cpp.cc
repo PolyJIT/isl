@@ -1052,7 +1052,7 @@ void cpp_generator::handle_enum_return(ostream &os, const string &res,
  * @param method
  * @param resVar
  */
-void cpp_generator::handle_return(ostream &os, const FunctionDecl *method,
+void cpp_generator::handle_return(ostream &os, FunctionDecl *method,
 	const string &resVar)
 {
 	QualType rettype = method->getReturnType();
