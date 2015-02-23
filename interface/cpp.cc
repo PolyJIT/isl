@@ -390,7 +390,6 @@ class cpp_class_printer
 		if (can_copy) {
 			print(os, "  explicit {0}(Context &Ctx, {1} *That) : "
 				  "{2}(Ctx, (void *)That) {{/* empty */}}\n"
-				  "\n"
 				  "  explicit {0}(Context &Ctx, void *That) : "
 				  "{2}(Ctx, (void *)That) {{/* empty */}}\n",
 			      p_name, name, base_class);
@@ -410,7 +409,6 @@ class cpp_class_printer
 	 */
 	void print_copy_constructor_h(ostream &os)
 	{
-		// 2. Copy constructor
 		print(os,
 		      "  {0}(const {0} &Other) : {1}(Other.ctx(), {2}) {{}}\n",
 		      p_name, base_class,
@@ -444,8 +442,6 @@ class cpp_class_printer
 	 */
 	void print_copy_assignment_h(ostream &os)
 	{
-		// 3. Copy assignment
-		os << endl;
 		if (!can_copy)
 			print(os,
 			      "  {0} &operator=(const {0} &Other) = delete;\n",
@@ -462,8 +458,6 @@ class cpp_class_printer
 	 */
 	void print_move_constructor_h(ostream &os)
 	{
-		// 4. Move constructor
-		os << endl;
 		if (can_copy)
 			print(os, "  {0} ({0} && Other) : {1}(Other.ctx(), "
 				  "Other.Give()) {{}}\n",
@@ -483,8 +477,6 @@ class cpp_class_printer
 	 */
 	void print_move_assignment_h(ostream &os)
 	{
-		// 5. Move assignment
-		os << endl;
 		print(os, "  {0} &operator=({0} && Other) {{\n", p_name);
 		if (can_copy)
 			print(os, "    {0} *New = Other.Give();\n"
@@ -537,20 +529,17 @@ class cpp_class_printer
 		      "{1}(Context::get({0}_get_ctx(That)), ",
 		      name, p_name);
 
-		if (can_copy)
+		if (can_copy) {
 			print(os, "That) {{}}\n");
-		else
+			print(os, "  {0} *GetCopy() const;\n", name);
+		} else {
 			print(os,
 			      "std::make_shared<isl::{0}::ptr>(That)) {{}}\n",
 			      p_name);
-		os << endl;
-
-		if (can_copy)
-			print(os, "  {0} *GetCopy() const;\n", name);
-		else
 			print(os, "  std::shared_ptr<isl::{0}::ptr> GetCopy() "
 				  "const;\n",
 			      p_name);
+		}
 	}
 
 	/**
@@ -562,10 +551,8 @@ class cpp_class_printer
 	 */
 	void print_api_unwrapper(ostream &os)
 	{
-		// Take (gets a copy of the raw pointer).
-		os << endl;
-		print(os, "///@brief Unwrap the stored isl object.\n"
-			  "///@return A the wrapped isl object.\n"
+		print(os, "/// @brief Unwrap the stored isl object.\n"
+			  "/// @return A the wrapped isl object.\n"
 			  "inline {0} *{1}::Get() const {{"
 			  "  return ({0} *){2};\n"
 			  "}}\n",
@@ -581,10 +568,8 @@ class cpp_class_printer
 	 */
 	void print_api_unwrapper_h(ostream &os)
 	{
-		// keep.
-		os << endl;
-		print(os, "  ///@brief unwrap the stored isl object.\n"
-			  "  ///@return a the wrapped isl object.\n"
+		print(os, "  /// @brief unwrap the stored isl object.\n"
+			  "  /// @return a the wrapped isl object.\n"
 			  "  {0} *Get() const;\n",
 		      name);
 	}
@@ -598,10 +583,6 @@ class cpp_class_printer
 	 */
 	void print_api_give(ostream &os)
 	{
-		// Generate a Give method (for isl_take arguments). We 'give'
-		// the memory,
-		// the isl takes it.
-		os << endl;
 		print(os,
 		      "/// @brief Release ownership of the wrapped object.\n"
 		      "///\n"
@@ -636,10 +617,6 @@ class cpp_class_printer
 	 */
 	void print_api_give_h(ostream &os)
 	{
-		// Generate a Give method (for isl_take arguments). We 'give'
-		// the memory,
-		// the isl takes it.
-		os << endl;
 		print(os,
 		      "  /// @brief Release ownership of the wrapped object.\n"
 		      "  ///\n"
@@ -661,7 +638,6 @@ class cpp_class_printer
 	{
 		if (!can_copy)
 			return;
-		os << endl;
 		print(os, "inline {1}::~{1}() {{\n"
 			  "  {0}_free(({0} *)This);\n"
 			  "  This = nullptr;\n"
@@ -676,7 +652,6 @@ class cpp_class_printer
 	 */
 	void print_destructor_h(ostream &os)
 	{
-		os << endl;
 		if (can_copy && !is_inplace)
 			print(os, "  virtual ~{0}();\n", p_name);
 		else
@@ -690,7 +665,6 @@ class cpp_class_printer
 	 */
 	void print_print_methods(ostream &os)
 	{
-		os << endl;
 		print(os,
 		      "inline std::string {0}::toStr(isl::Format F) const {{\n"
 		      "  Printer p = Printer::toStr();\n"
@@ -708,7 +682,6 @@ class cpp_class_printer
 	 */
 	void print_print_methods_h(ostream &os)
 	{
-		os << endl;
 		print(os, "  std::string toStr(isl::Format F = "
 			  "isl::Format::FIsl) const;\n");
 	}
@@ -1187,7 +1160,6 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 	os << endl;
 	print(os, "  ///@brief Generated from:\n"
 		  "  ///       {0}\n"
-		  "  ///\n"
 		  "{1}"
 		  "  ///\n"
 		  "  ///@return A new {2}\n"
@@ -1199,7 +1171,6 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 		os << endl;
 		print(os, "  ///@brief Generated from:\n"
 			  "  ///       {0}\n"
-			  "  ///\n"
 			  "{1}"
 			  "  ///\n"
 			  "  void {2}Inplace({3});\n",
@@ -1585,32 +1556,16 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	print(os, "\n"
 		  "public:\n");
-	if (can_cp) {
-		os << endl;
-		print(
-		    os,
-		    "  /// @brief Implement lt via pointer comparison of the\n"
-		    "  ///        wrapped isl objects.\n"
-		    "  bool operator<(const {0} &RHS) const {{ return This < "
-		    "RHS.This; }}\n",
-		    p_name);
-		os << endl;
-	}
-
 	p.print_api_wrapper_h(os);
 	p.print_api_give_h(os);
+	p.print_api_unwrapper_h(os);
 
-	p.print_copy_constructor_h(os);
-	p.print_copy_assignment_h(os);
-	p.print_move_constructor_h(os);
-	p.print_move_assignment_h(os);
+	os << endl;
 
 	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
 	     ++in) {
 		print_constructor(os, clazz, *in);
 	}
-
-	p.print_api_unwrapper_h(os);
 
 	// We do not free objects of classes that have in-place update
 	// (e.g., isl_band). These values exist only in dependence of
@@ -1642,6 +1597,22 @@ void cpp_generator::print_class(isl_class &clazz)
 		  "}} // namespace isl\n");
 	// if (name.compare("isl_val") == 0)
 	//  print_additional_val_methods(os);
+
+	p.print_copy_constructor_h(os);
+	p.print_copy_assignment_h(os);
+	p.print_move_constructor_h(os);
+	p.print_move_assignment_h(os);
+
+	if (can_cp) {
+		print(
+		    os,
+		    "  /// @brief Implement lt via pointer comparison of the\n"
+		    "  ///        wrapped isl objects.\n"
+		    "  bool operator<(const {0} &RHS) const {{ return This < "
+		    "RHS.This; }}\n",
+		    p_name);
+		os << endl;
+	}
 
 	os << getGuardFooter(p_name);
 }
