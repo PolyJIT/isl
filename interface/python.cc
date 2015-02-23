@@ -254,15 +254,9 @@ void python_generator::print_method(const isl_class &clazz,
 	string fullname = method->getName();
 	string cname = methodname2python(clazz, fullname);
 	int num_params = method->getNumParams();
-	int drop_user = 0;
+	int drop_user = has_user_pointer(method) ? 1 : 0;;
 	int drop_ctx = first_arg_is_isl_ctx(method);
 
-	for (int i = 1; i < num_params; ++i) {
-		ParmVarDecl *param = method->getParamDecl(i);
-		QualType type = param->getOriginalType();
-		if (is_callback(type))
-			drop_user = 1;
-	}
 
 	print_method_header(is_static(clazz, method), cname,
 			    num_params - drop_ctx - drop_user);
