@@ -41,10 +41,9 @@ private:
                     bool subclass, string super);
   void print_method_impl(ostream &os, isl_class &clazz, FunctionDecl *method,
                          bool subclass, string super);
-  void print_constructor(ostream &os, isl_class &clazz, FunctionDecl *cons,
-                         bool asNamedConstructor);
-  void print_constructor_impl(ostream &os, isl_class &clazz, FunctionDecl *cons,
-                              bool asNamedConstructor);
+  void print_constructor(ostream &os, isl_class &clazz, FunctionDecl *cons);
+  void print_constructor_impl(ostream &os, isl_class &clazz,
+			      FunctionDecl *cons);
   void print_class(isl_class &clazz);
   void print_class_impl(isl_class &clazz);
 
