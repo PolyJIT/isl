@@ -615,9 +615,11 @@ void python_generator::print(const isl_class &clazz)
 			print_constructor(clazz, *in);
 	}
 	printf("        raise Error\n");
-	printf("    def __del__(self):\n");
-	printf("        if hasattr(self, 'ptr'):\n");
-	printf("            isl.%s_free(self.ptr)\n", name.c_str());
+	if (!is_inplace(clazz)) {
+		printf("    def __del__(self):\n");
+		printf("        if hasattr(self, 'ptr'):\n");
+		printf("            isl.%s_free(self.ptr)\n", name.c_str());
+	}
 	if (can_be_printed(clazz)) {
 		printf("    def __str__(self):\n");
 		printf("        ptr = isl.%s_to_str(self.ptr)\n", name.c_str());
