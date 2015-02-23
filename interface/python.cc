@@ -425,9 +425,10 @@ void python_generator::print_constructor_call(const isl_class &clazz,
 	string fullname = cons->getName();
 	int num_params = cons->getNumParams();
 	int drop_ctx = first_arg_is_isl_ctx(cons);
+	int drop_user = has_user_pointer(cons) ? 1 : 0;
 
-	printf("        if len(args) == %d", num_params - drop_ctx);
-	for (int i = drop_ctx; i < num_params; ++i) {
+	printf("        if len(args) == %d", num_params-drop_ctx-drop_user);
+	for (int i = drop_ctx; i < num_params - drop_user; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
 		QualType type = param->getOriginalType();
 		if (is_isl_type(type)) {
@@ -445,7 +446,7 @@ void python_generator::print_constructor_call(const isl_class &clazz,
 	printf("            %s = isl.%s(", resultVar.c_str(), fullname.c_str());
 	if (drop_ctx)
 		printf("%s", ctxVar.c_str());
-	for (int i = drop_ctx; i < num_params; ++i) {
+	for (int i = drop_ctx; i < num_params - drop_user; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
 		if (i)
 			printf(", ");
@@ -463,6 +464,8 @@ void python_generator::print_constructor_call(const isl_class &clazz,
 		else
 			printf("args[%d]", i - drop_ctx);
 	}
+	if (drop_user > 0)
+		printf(", None");
 	printf(")\n");
 }
 
@@ -541,6 +544,9 @@ void python_generator::print_argtypes(FunctionDecl *fd)
 			printf("c_void_p");
 		else if (is_string(type))
 			printf("c_char_p");
+		else if (type->isPointerType() &&
+		         type->getPointeeType()->isVoidType())
+			printf("c_void_p");
 		else
 			printf("c_int");
 	}
