@@ -16,27 +16,27 @@ static const string srcPath = "";
 static const string includePath = "";
 typedef std::map<std::string, std::vector<std::string>> IslDepMap;
 static IslDepMap IslExtraDeps = {
-    {"isl_union_map", {"isl_aff", "isl_union_map", "isl_flow"}},
-    {"isl_qpolynomial", {"isl_polynomial"}},
-    {"isl_qpolynomial_fold", {"isl_polynomial"}},
-    {"isl_pw_qpolynomial", {"isl_polynomial"}},
-    {"isl_pw_qpolynomial_fold", {"isl_polynomial"}},
-    {"isl_union_pw_qpolynomial", {"isl_polynomial"}},
-    {"isl_union_pw_qpolynomial_fold", {"isl_polynomial"}},
-    {"isl_aff_list", {"isl_aff"}},
-    {"isl_band_list", {"isl_band"}},
-    {"isl_pw_aff_list", {"isl_aff"}},
-    {"isl_term", {"isl_polynomial"}},
-    {"isl_ast_expr", {"isl_ast"}},
-    {"isl_ast_expr_list", {"isl_ast"}},
-    {"isl_ast_node", {"isl_ast"}},
-    {"isl_ast_node_list", {"isl_ast"}},
-    {"isl_ast_print_options", {"isl_ast"}},
-    {"isl_basic_set_list", {"isl_set"}},
-    {"isl_set_list", {"isl_set"}},
-    {"isl_constraint_list", {"isl_constraint"}},
-    {"isl_id_list", {"isl_id"}},
-    {"isl_val_list", {"isl_val"}},
+	{"isl_union_map", {"isl_aff", "isl_union_map", "isl_flow"}},
+	{"isl_qpolynomial", {"isl_polynomial"}},
+	{"isl_qpolynomial_fold", {"isl_polynomial"}},
+	{"isl_pw_qpolynomial", {"isl_polynomial"}},
+	{"isl_pw_qpolynomial_fold", {"isl_polynomial"}},
+	{"isl_union_pw_qpolynomial", {"isl_polynomial"}},
+	{"isl_union_pw_qpolynomial_fold", {"isl_polynomial"}},
+	{"isl_aff_list", {"isl_aff"}},
+	{"isl_band_list", {"isl_band"}},
+	{"isl_pw_aff_list", {"isl_aff"}},
+	{"isl_term", {"isl_polynomial"}},
+	{"isl_ast_expr", {"isl_ast"}},
+	{"isl_ast_expr_list", {"isl_ast"}},
+	{"isl_ast_node", {"isl_ast"}},
+	{"isl_ast_node_list", {"isl_ast"}},
+	{"isl_ast_print_options", {"isl_ast"}},
+	{"isl_basic_set_list", {"isl_set"}},
+	{"isl_set_list", {"isl_set"}},
+	{"isl_constraint_list", {"isl_constraint"}},
+	{"isl_id_list", {"isl_id"}},
+	{"isl_val_list", {"isl_val"}},
 };
 
 /**
@@ -46,23 +46,24 @@ static IslDepMap IslExtraDeps = {
  *
  * @return the include name (without .h suffix).
  */
-static const string getIncludeForIslObj(const string &islName) {
-  assert(islName.length() >= 4);
-  string sName = islName.substr(4);
-  string lName;
-  for (string::const_iterator it = sName.begin(), ie = sName.end(); it != ie;
-       ++it) {
-    lName += tolower(*it);
-  }
+static const string getIncludeForIslObj(const string &islName)
+{
+	assert(islName.length() >= 4);
+	string sName = islName.substr(4);
+	string lName;
+	for (string::const_iterator it = sName.begin(), ie = sName.end();
+	     it != ie; ++it) {
+		lName += tolower(*it);
+	}
 
-  size_t pos;
-  pos = lName.find("basic_");
-  if (pos != string::npos)
-    return lName.substr(pos + 6);
+	size_t pos;
+	pos = lName.find("basic_");
+	if (pos != string::npos)
+		return lName.substr(pos + 6);
 
-  if (lName.find("_aff") != string::npos)
-    return "aff";
-  return lName;
+	if (lName.find("_aff") != string::npos)
+		return "aff";
+	return lName;
 }
 
 /**
@@ -77,23 +78,25 @@ static const string getIncludeForIslObj(const string &islName) {
  *
  * @return a string containing the include preamble for a .cpp or .h file
  */
-static const string getIncludes(set<pair<string, bool>> deps,
-                                bool impl = false) {
-  string includes;
-  set<pair<string, bool>>::iterator i;
-  set<pair<string, bool>>::iterator ie;
+static const string getIncludes(set<pair<string, bool>> deps, bool impl = false)
+{
+	string includes;
+	set<pair<string, bool>>::iterator i;
+	set<pair<string, bool>>::iterator ie;
 
-  for (auto DepPair : deps) {
-    if (DepPair.second)
-      includes += format("#include \"isl/{0}.h\"\n", DepPair.first);
-    else if (impl)
-      includes += format("#include \"isl/{0}.hpp\"\n", DepPair.first);
-  }
+	for (auto DepPair : deps) {
+		if (DepPair.second)
+			includes +=
+			    format("#include \"isl/{0}.h\"\n", DepPair.first);
+		else if (impl)
+			includes +=
+			    format("#include \"isl/{0}.hpp\"\n", DepPair.first);
+	}
 
-  includes += "#include <string>\n";
-  includes += "#include <ostream>\n";
+	includes += "#include <string>\n";
+	includes += "#include <ostream>\n";
 
-  return includes;
+	return includes;
 }
 
 /**
@@ -107,18 +110,19 @@ static const string getIncludes(set<pair<string, bool>> deps,
  *
  * @return a string containing the forward declarations for a .cpp or .h file
  */
-static const string getForwardDecls(set<pair<string, bool>> deps) {
-  string forwards;
-  set<pair<string, bool>>::iterator i;
-  set<pair<string, bool>>::iterator ie;
+static const string getForwardDecls(set<pair<string, bool>> deps)
+{
+	string forwards;
+	set<pair<string, bool>>::iterator i;
+	set<pair<string, bool>>::iterator ie;
 
-  for (i = deps.begin(), ie = deps.end(); i != ie; ++i) {
-    const pair<string, bool> dep = *i;
-    if (!dep.second)
-      forwards += "class " + dep.first + ";\n";
-  }
+	for (i = deps.begin(), ie = deps.end(); i != ie; ++i) {
+		const pair<string, bool> dep = *i;
+		if (!dep.second)
+			forwards += "class " + dep.first + ";\n";
+	}
 
-  return forwards;
+	return forwards;
 }
 
 /**
@@ -129,16 +133,17 @@ static const string getForwardDecls(set<pair<string, bool>> deps) {
  *
  * @return the indentend outstream
  */
-static string indent(unsigned depth) {
-  assert(depth > 0);
+static string indent(unsigned depth)
+{
+	assert(depth > 0);
 
-  string indt;
-  while (depth > 0) {
-    indt += " ";
-    --depth;
-  }
+	string indt;
+	while (depth > 0) {
+		indt += " ";
+		--depth;
+	}
 
-  return indt;
+	return indt;
 }
 
 /**
@@ -152,11 +157,12 @@ static string indent(unsigned depth) {
  *
  * @return a string containing the header guard header.
  */
-static const string getGuardHeader(const string className) {
-  return format("#ifndef ISL_CXX_{0}_H\n"
-                "#define ISL_CXX_{0}_H\n"
-                "\n",
-                className);
+static const string getGuardHeader(const string className)
+{
+	return format("#ifndef ISL_CXX_{0}_H\n"
+		      "#define ISL_CXX_{0}_H\n"
+		      "\n",
+		      className);
 }
 
 /**
@@ -169,8 +175,9 @@ static const string getGuardHeader(const string className) {
  *
  * @return a string containing the header guard footer
  */
-static const string getGuardFooter(const string className) {
-  return format("#endif //ISL_CXX_{0}_H\n", className);
+static const string getGuardFooter(const string className)
+{
+	return format("#endif //ISL_CXX_{0}_H\n", className);
 }
 
 /**
@@ -183,19 +190,20 @@ static const string getGuardFooter(const string className) {
  *
  * @return
  */
-static string name2camelcase(const string &name, bool startUpper) {
-  bool mkUpper = startUpper;
-  string cppname;
-  for (auto c : name) {
-    if (c == '_')
-      mkUpper = true;
-    else if (mkUpper) {
-      cppname += toupper(c);
-      mkUpper = false;
-    } else
-      cppname += c;
-  }
-  return cppname;
+static string name2camelcase(const string &name, bool startUpper)
+{
+	bool mkUpper = startUpper;
+	string cppname;
+	for (auto c : name) {
+		if (c == '_')
+			mkUpper = true;
+		else if (mkUpper) {
+			cppname += toupper(c);
+			mkUpper = false;
+		} else
+			cppname += c;
+	}
+	return cppname;
 }
 
 /**
@@ -209,16 +217,18 @@ static string name2camelcase(const string &name, bool startUpper) {
  *
  * @return the initials of the name.
  */
-static string name2initials(const string &name) {
-  string cCname = name2camelcase(name, true);
-  string iname;
+static string name2initials(const string &name)
+{
+	string cCname = name2camelcase(name, true);
+	string iname;
 
-  for (string::const_iterator it = cCname.begin(); it != cCname.end(); ++it) {
-    char c = *it;
-    if (isupper(c))
-      iname += c;
-  }
-  return iname;
+	for (string::const_iterator it = cCname.begin(); it != cCname.end();
+	     ++it) {
+		char c = *it;
+		if (isupper(c))
+			iname += c;
+	}
+	return iname;
 }
 
 /**
@@ -233,12 +243,13 @@ static string name2initials(const string &name) {
  *
  * @return
  */
-static string enumval2cpp(const string &valname) {
-  size_t n = valname.find("_");
-  assert(n != string::npos);
-  n = valname.find("_", n + 1);
-  assert(n != string::npos);
-  return name2camelcase(valname.substr(n + 1), true);
+static string enumval2cpp(const string &valname)
+{
+	size_t n = valname.find("_");
+	assert(n != string::npos);
+	n = valname.find("_", n + 1);
+	assert(n != string::npos);
+	return name2camelcase(valname.substr(n + 1), true);
 }
 
 /**
@@ -251,28 +262,31 @@ static string enumval2cpp(const string &valname) {
  *
  * @return
  */
-static string type2cpp(const string &name) {
-  assert(name.length() >= 4);
-  return name2camelcase(name.substr(4), true);
+static string type2cpp(const string &name)
+{
+	assert(name.length() >= 4);
+	return name2camelcase(name.substr(4), true);
 }
 
-static void printHandleError(ostream &os, int level) {
-  print(os, "{0}static inline void handleError(std::string what) {{\n"
-            "{0}#ifdef __EXCEPTIONS\n"
-            "{0}  throw IslException(what);\n"
-            "{0}#else\n"
-            "{0}  std::cerr << what << std::endl;\n"
-            "{0}  std::abort();\n"
-            "{0}#endif\n"
-            "{0}}}\n",
-        indent(level));
+static void printHandleError(ostream &os, int level)
+{
+	print(os, "{0}static inline void handleError(std::string what) {{\n"
+		  "{0}#ifdef __EXCEPTIONS\n"
+		  "{0}  throw IslException(what);\n"
+		  "{0}#else\n"
+		  "{0}  std::cerr << what << std::endl;\n"
+		  "{0}  std::abort();\n"
+		  "{0}#endif\n"
+		  "{0}}}\n",
+	      indent(level));
 }
 
-static void printHandleErrorCall(ostream &os, int level, string &&what) {
-  print(os, "{0}if (Ctx.hasError()) {{\n"
-            "{0}  handleError(\"{1}\");\n"
-            "{0}}}\n",
-        indent(level), what);
+static void printHandleErrorCall(ostream &os, int level, string &&what)
+{
+	print(os, "{0}if (Ctx.hasError()) {{\n"
+		  "{0}  handleError(\"{1}\");\n"
+		  "{0}}}\n",
+	      indent(level), what);
 }
 
 /**
@@ -282,12 +296,13 @@ static void printHandleErrorCall(ostream &os, int level, string &&what) {
  * @param name
  * @param cname
  */
-static void print_custom_deleter(ostream &os, string name, string cname) {
-  print(os, "[=](ptr *{0}) {{\n"
-            "  {1}_free({0}->p);\n"
-            "  {0}->p = nullptr;\n"
-            "}}",
-        name, cname);
+static void print_custom_deleter(ostream &os, string name, string cname)
+{
+	print(os, "[=](ptr *{0}) {{\n"
+		  "  {1}_free({0}->p);\n"
+		  "  {0}->p = nullptr;\n"
+		  "}}",
+	      name, cname);
 }
 
 /**
@@ -299,19 +314,20 @@ static void print_custom_deleter(ostream &os, string name, string cname) {
  * @param os
  * @param name
  */
-static void print_ptr_wrapper(ostream &os, string name) {
-  print(os, "  struct ptr {{\n"
-            "    {0} *p;\n"
-            "    explicit ptr({0} *p) : p(p) {{}}\n"
-            "    ~ptr() {{\n"
-            "      {0}_free(p);\n"
-            "    }}\n"
-            "    ptr(const ptr &other) = delete;\n"
-            "    ptr &operator=(const ptr &other) = delete;\n"
-            "    ptr(ptr && other) = delete;\n"
-            "    ptr &operator=(ptr && other) = delete;\n"
-            "  }};\n",
-        name);
+static void print_ptr_wrapper(ostream &os, string name)
+{
+	print(os, "  struct ptr {{\n"
+		  "    {0} *p;\n"
+		  "    explicit ptr({0} *p) : p(p) {{}}\n"
+		  "    ~ptr() {{\n"
+		  "      {0}_free(p);\n"
+		  "    }}\n"
+		  "    ptr(const ptr &other) = delete;\n"
+		  "    ptr &operator=(const ptr &other) = delete;\n"
+		  "    ptr(ptr && other) = delete;\n"
+		  "    ptr &operator=(ptr && other) = delete;\n"
+		  "  }};\n",
+	      name);
 }
 
 /**
@@ -332,330 +348,370 @@ static void print_ptr_wrapper(ostream &os, string name) {
  *  + Casts
  *  + Member methods
  */
-class cpp_class_printer {
-private:
-  const isl_class &clazz;
-  const bool subclass;
-  const bool can_copy;
-  const bool is_inplace;
-  const string &super;
-  const string base_class;
-  string name;
-  string p_name;
+class cpp_class_printer
+{
+      private:
+	const isl_class &clazz;
+	const bool subclass;
+	const bool can_copy;
+	const bool is_inplace;
+	const string &super;
+	const string base_class;
+	string name;
+	string p_name;
 
-public:
-  /**
-   * @brief Create a Class printer
-   *
-   * @param clazz the isl_class to print
-   * @param subclass true, if we are a subclass of another isl_class.
-   * @param can_copy true, if we can create copies of ourself.
-   * @param super our superclass.
-   */
-  explicit cpp_class_printer(const isl_class &clazz, bool subclass,
-                             bool can_copy, const string &super,
-                             bool is_inplace)
-      : clazz(clazz), subclass(subclass), can_copy(can_copy), super(super),
-        base_class((!subclass) ? "IslBase" : type2cpp(super)),
-        is_inplace(is_inplace) {
-    name = clazz.name;
-    p_name = type2cpp(name);
-  }
+      public:
+	/**
+	 * @brief Create a Class printer
+	 *
+	 * @param clazz the isl_class to print
+	 * @param subclass true, if we are a subclass of another isl_class.
+	 * @param can_copy true, if we can create copies of ourself.
+	 * @param super our superclass.
+	 */
+	explicit cpp_class_printer(const isl_class &clazz, bool subclass,
+		bool can_copy, const string &super, bool is_inplace) :
+			clazz(clazz), subclass(subclass), can_copy(can_copy),
+			super(super),
+			base_class((!subclass) ? "IslBase" : type2cpp(super)),
+			is_inplace(is_inplace)
+	{
+		name = clazz.name;
+		p_name = type2cpp(name);
+	}
 
-  /**
-   * @brief Print declaration of explicit constructors
-   *
-   * @param os
-   */
-  void print_explicit_constructors_h(ostream &os) {
-    if (can_copy) {
-      print(os, "  explicit {0}(Context &Ctx, {1} *That) : "
-                "{2}(Ctx, (void *)That) {{/* empty */}}\n"
-                "\n"
-                "  explicit {0}(Context &Ctx, void *That) : "
-                "{2}(Ctx, (void *)That) {{/* empty */}}\n",
-            p_name, name, base_class);
-    } else {
-      print(os, "  explicit {}(Context &Ctx, std::shared_ptr<ptr> That)\n"
-                "    : {}(Ctx, nullptr), This(That) {{/* empty */}}\n",
-            p_name, base_class);
-    }
-  }
+	/**
+	 * @brief Print declaration of explicit constructors
+	 *
+	 * @param os
+	 */
+	void print_explicit_constructors_h(ostream &os)
+	{
+		if (can_copy) {
+			print(os, "  explicit {0}(Context &Ctx, {1} *That) : "
+				  "{2}(Ctx, (void *)That) {{/* empty */}}\n"
+				  "\n"
+				  "  explicit {0}(Context &Ctx, void *That) : "
+				  "{2}(Ctx, (void *)That) {{/* empty */}}\n",
+			      p_name, name, base_class);
+		} else {
+			print(os, "  explicit {}(Context &Ctx, "
+				  "std::shared_ptr<ptr> That)\n"
+				  "    : {}(Ctx, nullptr), This(That) {{/* "
+				  "empty */}}\n",
+			      p_name, base_class);
+		}
+	}
 
-  /**
-   * @brief Print declaration of a copy constructor
-   *
-   * @param os
-   */
-  void print_copy_constructor_h(ostream &os) {
-    // 2. Copy constructor
-    print(os, "  {0}(const {0} &Other) : {1}(Other.ctx(), {2}) {{}}\n", p_name,
-          base_class,
-          (can_copy) ? "Other.GetCopy()" : "nullptr), This(Other.GetCopy()");
-  }
+	/**
+	 * @brief Print declaration of a copy constructor
+	 *
+	 * @param os
+	 */
+	void print_copy_constructor_h(ostream &os)
+	{
+		// 2. Copy constructor
+		print(os,
+		      "  {0}(const {0} &Other) : {1}(Other.ctx(), {2}) {{}}\n",
+		      p_name, base_class,
+		      (can_copy) ? "Other.GetCopy()"
+				 : "nullptr), This(Other.GetCopy()");
+	}
 
-  /**
-   * @brief Print definition of the copy assignment operator
-   *
-   * @param os
-   */
-  void print_copy_assignment(ostream &os) {
-    if (!can_copy)
-      return;
+	/**
+	 * @brief Print definition of the copy assignment operator
+	 *
+	 * @param os
+	 */
+	void print_copy_assignment(ostream &os)
+	{
+		if (!can_copy)
+			return;
 
-    print(os, "inline {0} &{0}::operator=(const {0} &Other) {{\n"
-              "  {1} *New = Other.GetCopy();\n"
-              "  {1}_free(({1} *)This);\n"
-              "  This = New;\n"
-              "  return *this;\n"
-              "}}",
-          p_name, name);
-  }
+		print(os, "inline {0} &{0}::operator=(const {0} &Other) {{\n"
+			  "  {1} *New = Other.GetCopy();\n"
+			  "  {1}_free(({1} *)This);\n"
+			  "  This = New;\n"
+			  "  return *this;\n"
+			  "}}",
+		      p_name, name);
+	}
 
-  /**
-   * @brief Print declaration of the copy assignment operator
-   *
-   * @param os
-   */
-  void print_copy_assignment_h(ostream &os) {
-    // 3. Copy assignment
-    os << endl;
-    if (!can_copy)
-      print(os, "  {0} &operator=(const {0} &Other) = delete;\n", p_name);
-    else
-      print(os, "  {0} &operator=(const {0} &Other);\n", p_name);
-  }
+	/**
+	 * @brief Print declaration of the copy assignment operator
+	 *
+	 * @param os
+	 */
+	void print_copy_assignment_h(ostream &os)
+	{
+		// 3. Copy assignment
+		os << endl;
+		if (!can_copy)
+			print(os,
+			      "  {0} &operator=(const {0} &Other) = delete;\n",
+			      p_name);
+		else
+			print(os, "  {0} &operator=(const {0} &Other);\n",
+			      p_name);
+	}
 
-  /**
-   * @brief Print declaration of the move constructor
-   *
-   * @param os
-   */
-  void print_move_constructor_h(ostream &os) {
-    // 4. Move constructor
-    os << endl;
-    if (can_copy)
-      print(os, "  {0} ({0} && Other) : {1}(Other.ctx(), Other.Give()) {{}}\n",
-            p_name, base_class);
-    else
-      print(os, "  {0} ({0} && Other) : {1}(Other.ctx(), nullptr), "
-                "This(std::move(Other.This)) {{}}\n",
-            p_name, base_class);
-  }
+	/**
+	 * @brief Print declaration of the move constructor
+	 *
+	 * @param os
+	 */
+	void print_move_constructor_h(ostream &os)
+	{
+		// 4. Move constructor
+		os << endl;
+		if (can_copy)
+			print(os, "  {0} ({0} && Other) : {1}(Other.ctx(), "
+				  "Other.Give()) {{}}\n",
+			      p_name, base_class);
+		else
+			print(
+			    os,
+			    "  {0} ({0} && Other) : {1}(Other.ctx(), nullptr), "
+			    "This(std::move(Other.This)) {{}}\n",
+			    p_name, base_class);
+	}
 
-  /**
-   * @brief Print declaration of the move assignment operator
-   *
-   * @param os
-   */
-  void print_move_assignment_h(ostream &os) {
-    // 5. Move assignment
-    os << endl;
-    print(os, "  {0} &operator=({0} && Other) {{\n", p_name);
-    if (can_copy)
-      print(os, "    {0} *New = Other.Give();\n"
-                "    {0}_free(({0} *)This);\n"
-                "    This = New;\n",
-            name);
-    else
-      print(os, "    std::swap(This, Other.This);\n");
-    print(os, "    return *this;\n"
-              "  }}\n");
-  }
+	/**
+	 * @brief Print declaration of the move assignment operator
+	 *
+	 * @param os
+	 */
+	void print_move_assignment_h(ostream &os)
+	{
+		// 5. Move assignment
+		os << endl;
+		print(os, "  {0} &operator=({0} && Other) {{\n", p_name);
+		if (can_copy)
+			print(os, "    {0} *New = Other.Give();\n"
+				  "    {0}_free(({0} *)This);\n"
+				  "    This = New;\n",
+			      name);
+		else
+			print(os, "    std::swap(This, Other.This);\n");
+		print(os, "    return *this;\n"
+			  "  }}\n");
+	}
 
-  /**
-   * @brief Print definition of the API wrapper
-   *
-   * @param os
-   */
-  void print_api_wrapper(ostream &os) {
-    if (can_copy) {
-      print(os, "inline {0} *{1}::GetCopy() const {{\n"
-                "  return {0}_copy(({0} *)This);\n"
-                "}}\n",
-            name, p_name);
-    } else {
-      print(os,
-            "inline std::shared_ptr<isl::{0}::ptr> {0}::GetCopy() const {{\n"
-            "  return {0}::This;\n"
-            "}}\n",
-            p_name);
-    }
-  }
+	/**
+	 * @brief Print definition of the API wrapper
+	 *
+	 * @param os
+	 */
+	void print_api_wrapper(ostream &os)
+	{
+		if (can_copy) {
+			print(os, "inline {0} *{1}::GetCopy() const {{\n"
+				  "  return {0}_copy(({0} *)This);\n"
+				  "}}\n",
+			      name, p_name);
+		} else {
+			print(os, "inline std::shared_ptr<isl::{0}::ptr> "
+				  "{0}::GetCopy() const {{\n"
+				  "  return {0}::This;\n"
+				  "}}\n",
+			      p_name);
+		}
+	}
 
-  /**
-   * @brief Print the declaration of the API wrapper
-   *
-   * @param os
-   */
-  void print_api_wrapper_h(ostream &os) {
-    // 1. Wrap an isl_* object.
-    print(os,
-          "  ///@brief Wrap an existing isl object.\n"
-          "  ///\n"
-          "  /// This serves as an entry point into the C++ API.\n"
-          "  /// We take ownership of the isl object.\n"
-          "  ///\n"
-          "  ///@param That the {0} we want to wrap.\n"
-          "  explicit {1}({0} *That) : {1}(Context::get({0}_get_ctx(That)), ",
-          name, p_name);
+	/**
+	 * @brief Print the declaration of the API wrapper
+	 *
+	 * @param os
+	 */
+	void print_api_wrapper_h(ostream &os)
+	{
+		// 1. Wrap an isl_* object.
+		print(os,
+		      "  ///@brief Wrap an existing isl object.\n"
+		      "  ///\n"
+		      "  /// This serves as an entry point into the C++ API.\n"
+		      "  /// We take ownership of the isl object.\n"
+		      "  ///\n"
+		      "  ///@param That the {0} we want to wrap.\n"
+		      "  explicit {1}({0} *That) : "
+		      "{1}(Context::get({0}_get_ctx(That)), ",
+		      name, p_name);
 
-    if (can_copy)
-      print(os, "That) {{}}\n");
-    else
-      print(os, "std::make_shared<isl::{0}::ptr>(That)) {{}}\n", p_name);
-    os << endl;
+		if (can_copy)
+			print(os, "That) {{}}\n");
+		else
+			print(os,
+			      "std::make_shared<isl::{0}::ptr>(That)) {{}}\n",
+			      p_name);
+		os << endl;
 
-    if (can_copy)
-      print(os, "  {0} *GetCopy() const;\n", name);
-    else
-      print(os, "  std::shared_ptr<isl::{0}::ptr> GetCopy() const;\n", p_name);
-  }
+		if (can_copy)
+			print(os, "  {0} *GetCopy() const;\n", name);
+		else
+			print(os, "  std::shared_ptr<isl::{0}::ptr> GetCopy() "
+				  "const;\n",
+			      p_name);
+	}
 
-  /**
-   * @brief Print the definition of the API unwrapper
-   *
-   * The API Unwrapper returns a _copy_ of the ISL object, if possible.
-   *
-   * @param os
-   */
-  void print_api_unwrapper(ostream &os) {
-    // Take (gets a copy of the raw pointer).
-    os << endl;
-    print(os, "///@brief Unwrap the stored isl object.\n"
-              "///@return A the wrapped isl object.\n"
-              "inline {0} *{1}::Get() const {{"
-              "  return ({0} *){2};\n"
-              "}}\n",
-          name, p_name, (can_copy) ? "This" : "This.get()->p");
-  }
+	/**
+	 * @brief Print the definition of the API unwrapper
+	 *
+	 * The API Unwrapper returns a _copy_ of the ISL object, if possible.
+	 *
+	 * @param os
+	 */
+	void print_api_unwrapper(ostream &os)
+	{
+		// Take (gets a copy of the raw pointer).
+		os << endl;
+		print(os, "///@brief Unwrap the stored isl object.\n"
+			  "///@return A the wrapped isl object.\n"
+			  "inline {0} *{1}::Get() const {{"
+			  "  return ({0} *){2};\n"
+			  "}}\n",
+		      name, p_name, (can_copy) ? "This" : "This.get()->p");
+	}
 
-  /**
-   * @brief Print the declaration of the API unwrapper
-   *
-   * The API Unwrapper returns a _copy_ of the ISL object, if possible.
-   *
-   * @param os
-   */
-  void print_api_unwrapper_h(ostream &os) {
-    // keep.
-    os << endl;
-    print(os, "  ///@brief unwrap the stored isl object.\n"
-              "  ///@return a the wrapped isl object.\n"
-              "  {0} *Get() const;\n",
-          name);
-  }
+	/**
+	 * @brief Print the declaration of the API unwrapper
+	 *
+	 * The API Unwrapper returns a _copy_ of the ISL object, if possible.
+	 *
+	 * @param os
+	 */
+	void print_api_unwrapper_h(ostream &os)
+	{
+		// keep.
+		os << endl;
+		print(os, "  ///@brief unwrap the stored isl object.\n"
+			  "  ///@return a the wrapped isl object.\n"
+			  "  {0} *Get() const;\n",
+		      name);
+	}
 
-  /**
-   * @brief Print the definition of the API Give
-   *
-   * Returns the wrapped pointer, this exits isl
-   *
-   * @param os
-   */
-  void print_api_give(ostream &os) {
-    // Generate a Give method (for isl_take arguments). We 'give' the memory,
-    // the isl takes it.
-    os << endl;
-    print(os, "/// @brief Release ownership of the wrapped object.\n"
-              "///\n"
-              "/// You are on your own now buddy.\n"
-              "/// The wrapper cannot be used anymore after calling Give()\n"
-              "///\n"
-              "///@return the wrapped isl object.\n");
-    if (can_copy)
-      print(os, "inline {0} *{1}::Give() {{\n"
-                "  {0} *res = ({0} *)This;\n"
-                "  This = nullptr;\n"
-                "  return res;\n"
-                "}}\n",
-            name, p_name);
-    else
-      print(os, "inline {0} *{1}::Give() {{\n"
-                "  {0} *res = This.get()->p;\n"
-                "  This.get()->p = nullptr;\n"
-                "  This.reset();\n"
-                "  return res;\n"
-                "}}\n",
-            name, p_name);
-  }
+	/**
+	 * @brief Print the definition of the API Give
+	 *
+	 * Returns the wrapped pointer, this exits isl
+	 *
+	 * @param os
+	 */
+	void print_api_give(ostream &os)
+	{
+		// Generate a Give method (for isl_take arguments). We 'give'
+		// the memory,
+		// the isl takes it.
+		os << endl;
+		print(os,
+		      "/// @brief Release ownership of the wrapped object.\n"
+		      "///\n"
+		      "/// You are on your own now buddy.\n"
+		      "/// The wrapper cannot be used anymore after calling "
+		      "Give()\n"
+		      "///\n"
+		      "///@return the wrapped isl object.\n");
+		if (can_copy)
+			print(os, "inline {0} *{1}::Give() {{\n"
+				  "  {0} *res = ({0} *)This;\n"
+				  "  This = nullptr;\n"
+				  "  return res;\n"
+				  "}}\n",
+			      name, p_name);
+		else
+			print(os, "inline {0} *{1}::Give() {{\n"
+				  "  {0} *res = This.get()->p;\n"
+				  "  This.get()->p = nullptr;\n"
+				  "  This.reset();\n"
+				  "  return res;\n"
+				  "}}\n",
+			      name, p_name);
+	}
 
-  /**
-   * @brief Print the declaration of the API Give
-   *
-   * Returns the wrapped pointer, this exits isl
-   *
-   * @param os
-   */
-  void print_api_give_h(ostream &os) {
-    // Generate a Give method (for isl_take arguments). We 'give' the memory,
-    // the isl takes it.
-    os << endl;
-    print(os, "  /// @brief Release ownership of the wrapped object.\n"
-              "  ///\n"
-              "  /// You are on your own now buddy.\n"
-              "  /// The wrapper cannot be used anymore after calling Give()\n"
-              "  ///\n"
-              "  ///@return the wrapped isl object.\n"
-              "  {0} *Give();\n",
-          name);
-  }
+	/**
+	 * @brief Print the declaration of the API Give
+	 *
+	 * Returns the wrapped pointer, this exits isl
+	 *
+	 * @param os
+	 */
+	void print_api_give_h(ostream &os)
+	{
+		// Generate a Give method (for isl_take arguments). We 'give'
+		// the memory,
+		// the isl takes it.
+		os << endl;
+		print(os,
+		      "  /// @brief Release ownership of the wrapped object.\n"
+		      "  ///\n"
+		      "  /// You are on your own now buddy.\n"
+		      "  /// The wrapper cannot be used anymore after calling "
+		      "Give()\n"
+		      "  ///\n"
+		      "  ///@return the wrapped isl object.\n"
+		      "  {0} *Give();\n",
+		      name);
+	}
 
-  /**
-   * @brief Print the definition of a destructor
-   *
-   * @param os
-   */
-  void print_destructor(ostream &os) {
-    if (!can_copy)
-      return;
-    os << endl;
-    print(os, "inline {1}::~{1}() {{\n"
-              "  {0}_free(({0} *)This);\n"
-              "  This = nullptr;\n"
-              "}}\n",
-          name, p_name);
-  }
+	/**
+	 * @brief Print the definition of a destructor
+	 *
+	 * @param os
+	 */
+	void print_destructor(ostream &os)
+	{
+		if (!can_copy)
+			return;
+		os << endl;
+		print(os, "inline {1}::~{1}() {{\n"
+			  "  {0}_free(({0} *)This);\n"
+			  "  This = nullptr;\n"
+			  "}}\n",
+		      name, p_name);
+	}
 
-  /**
-   * @brief Print the declaration of a destructor
-   *
-   * @param os
-   */
-  void print_destructor_h(ostream &os) {
-    os << endl;
-    if (can_copy && !is_inplace)
-      print(os, "  virtual ~{0}();\n", p_name);
-    else
-      print(os, "  virtual ~{0}() = default;\n", p_name);
-  }
+	/**
+	 * @brief Print the declaration of a destructor
+	 *
+	 * @param os
+	 */
+	void print_destructor_h(ostream &os)
+	{
+		os << endl;
+		if (can_copy && !is_inplace)
+			print(os, "  virtual ~{0}();\n", p_name);
+		else
+			print(os, "  virtual ~{0}() = default;\n", p_name);
+	}
 
-  /**
-   * @brief Print the definition of a toStr() method.
-   *
-   * @param os
-   */
-  void print_print_methods(ostream &os) {
-    os << endl;
-    print(os, "inline std::string {0}::toStr(isl::Format F) const {{\n"
-              "  Printer p = Printer::toStr();\n"
-              "  p = p.setOutputFormat(F);\n"
-              "  p = p.print{0}(*this);\n"
-              "  return p.getStr();\n"
-              "}}\n",
-          p_name);
-  }
+	/**
+	 * @brief Print the definition of a toStr() method.
+	 *
+	 * @param os
+	 */
+	void print_print_methods(ostream &os)
+	{
+		os << endl;
+		print(os,
+		      "inline std::string {0}::toStr(isl::Format F) const {{\n"
+		      "  Printer p = Printer::toStr();\n"
+		      "  p = p.setOutputFormat(F);\n"
+		      "  p = p.print{0}(*this);\n"
+		      "  return p.getStr();\n"
+		      "}}\n",
+		      p_name);
+	}
 
-  /**
-   * @brief Print the declaration of a toStr() method.
-   *
-   * @param os
-   */
-  void print_print_methods_h(ostream &os) {
-    os << endl;
-    print(os,
-          "  std::string toStr(isl::Format F = isl::Format::FIsl) const;\n");
-  }
+	/**
+	 * @brief Print the declaration of a toStr() method.
+	 *
+	 * @param os
+	 */
+	void print_print_methods_h(ostream &os)
+	{
+		os << endl;
+		print(os, "  std::string toStr(isl::Format F = "
+			  "isl::Format::FIsl) const;\n");
+	}
 };
 
 /**
@@ -677,32 +733,32 @@ public:
  *
  * @return
  */
-string cpp_generator::paramtype2jna(QualType ty, bool wrapperTypes,
-                                    bool isBool) {
-  string type;
-  if (is_isl_ctx(ty))
-    type = "Context &";
-  else if (is_isl_result_argument(ty)) {
-    type = cppTypeName(ty->getPointeeType()) + ".Ptr[]";
-  } else if (is_isl_class(ty)) {
-    type = type2cpp(extract_type(ty)) + ".Ptr";
-  } else if (is_isl_enum(ty)) {
-    type = "int";
-  } else if (is_string(ty))
-    type = "std::string";
-  else if (ty->isFunctionPointerType())
-    type = "Callback";
-  else if (ty->isPointerType()) {
-    if (ty->getPointeeType().getAsString().compare("int") == 0)
-      type = isBool ? "bool[]" : "int[]";
-    type = ty.getAsString();
-  } else if (ty->isVoidType())
-    type = "void";
-  else {
-    type = ty.getAsString();
-  }
+string cpp_generator::paramtype2jna(QualType ty, bool wrapperTypes, bool isBool)
+{
+	string type;
+	if (is_isl_ctx(ty))
+		type = "Context &";
+	else if (is_isl_result_argument(ty)) {
+		type = cppTypeName(ty->getPointeeType()) + ".Ptr[]";
+	} else if (is_isl_class(ty)) {
+		type = type2cpp(extract_type(ty)) + ".Ptr";
+	} else if (is_isl_enum(ty)) {
+		type = "int";
+	} else if (is_string(ty))
+		type = "std::string";
+	else if (ty->isFunctionPointerType())
+		type = "Callback";
+	else if (ty->isPointerType()) {
+		if (ty->getPointeeType().getAsString().compare("int") == 0)
+			type = isBool ? "bool[]" : "int[]";
+		type = ty.getAsString();
+	} else if (ty->isVoidType())
+		type = "void";
+	else {
+		type = ty.getAsString();
+	}
 
-  return type;
+	return type;
 }
 
 /**
@@ -714,8 +770,9 @@ string cpp_generator::paramtype2jna(QualType ty, bool wrapperTypes,
  *
  * @return
  */
-string cpp_generator::paramtype2jna(const ParmVarDecl *decl) {
-  return paramtype2jna(decl->getOriginalType(), false, is_bool(decl));
+string cpp_generator::paramtype2jna(const ParmVarDecl *decl)
+{
+	return paramtype2jna(decl->getOriginalType(), false, is_bool(decl));
 }
 
 /**
@@ -727,8 +784,9 @@ string cpp_generator::paramtype2jna(const ParmVarDecl *decl) {
  *
  * @return
  */
-string cpp_generator::paramtype2cpp(const ParmVarDecl *decl) {
-  return paramtype2cpp(decl->getOriginalType(), false, is_bool(decl));
+string cpp_generator::paramtype2cpp(const ParmVarDecl *decl)
+{
+	return paramtype2cpp(decl->getOriginalType(), false, is_bool(decl));
 }
 
 /**
@@ -743,8 +801,9 @@ string cpp_generator::paramtype2cpp(const ParmVarDecl *decl) {
  *
  * @return
  */
-string cpp_generator::rettype2jna(const FunctionDecl *method) {
-  return paramtype2jna(method->getReturnType());
+string cpp_generator::rettype2jna(const FunctionDecl *method)
+{
+	return paramtype2jna(method->getReturnType());
 }
 
 /**
@@ -764,28 +823,34 @@ string cpp_generator::rettype2jna(const FunctionDecl *method) {
  * @return
  */
 string cpp_generator::paramtype2cpp(QualType type, bool wrapperTypes,
-                                    bool isBool) {
-  if (is_isl_type(type)) {
-    return cppTypeName(type);
-  } else if (is_isl_result_argument(type)) {
-    return format("std::unique_ptr<{0}> *", cppTypeName(type->getPointeeType()));
-  } else if (type->isPointerType()) {
-    QualType ptype = type->getPointeeType();
-    if (ptype->isFunctionType()) {
-      const FunctionProtoType *ft = ptype->getAs<FunctionProtoType>();
-      unsigned nArgs = ft->getNumArgs();
+	bool isBool)
+{
+	if (is_isl_type(type)) {
+		return cppTypeName(type);
+	} else if (is_isl_result_argument(type)) {
+		return format("std::unique_ptr<{0}> *",
+			      cppTypeName(type->getPointeeType()));
+	} else if (type->isPointerType()) {
+		QualType ptype = type->getPointeeType();
+		if (ptype->isFunctionType()) {
+			const FunctionProtoType *ft =
+			    ptype->getAs<FunctionProtoType>();
+			unsigned nArgs = ft->getNumArgs();
 
-      ostringstream arg_decl_list;
-      for (unsigned i = 0; i < nArgs; ++i) {
-        arg_decl_list << (i > 0 ? ", " : "") << ft->getArgType(i).getAsString();
-      }
+			ostringstream arg_decl_list;
+			for (unsigned i = 0; i < nArgs; ++i) {
+				arg_decl_list
+				    << (i > 0 ? ", " : "")
+				    << ft->getArgType(i).getAsString();
+			}
 
-      return format("const std::function<{0}({1})> &&",
-                    ft->getReturnType().getAsString(), arg_decl_list.str());
-    }
-  }
+			return format("const std::function<{0}({1})> &&",
+				      ft->getReturnType().getAsString(),
+				      arg_decl_list.str());
+		}
+	}
 
-  return paramtype2jna(type, wrapperTypes, isBool);
+	return paramtype2jna(type, wrapperTypes, isBool);
 }
 
 /**
@@ -800,27 +865,29 @@ string cpp_generator::paramtype2cpp(QualType type, bool wrapperTypes,
  *
  * @return
  */
-string cpp_generator::rettype2cpp(const FunctionDecl *method) {
-  return paramtype2cpp(method->getReturnType());
+string cpp_generator::rettype2cpp(const FunctionDecl *method)
+{
+	return paramtype2cpp(method->getReturnType());
 }
 
 /**
  * @brief Keywords in C++, do not use these.
  */
-static const char *keywords[] = {"void",  "and",     "or",
-                                 "union", "foreach", nullptr};
+static const char *keywords[] = {"void",  "and", "or", "union", "foreach",
+	nullptr};
 
 string cpp_generator::methodname2cpp(const isl_class &clazz,
-                                     const string &methodname) {
-  const string cname = clazz.name_without_class(methodname);
-  string jname = name2camelcase(cname, false);
-  for (const char **p = keywords; *p; ++p) {
-    if (jname == *p) {
-      jname += "_";
-      break;
-    }
-  }
-  return jname;
+	const string &methodname)
+{
+	const string cname = clazz.name_without_class(methodname);
+	string jname = name2camelcase(cname, false);
+	for (const char **p = keywords; *p; ++p) {
+		if (jname == *p) {
+			jname += "_";
+			break;
+		}
+	}
+	return jname;
 }
 
 /**
@@ -835,8 +902,9 @@ string cpp_generator::methodname2cpp(const isl_class &clazz,
  * @return an expression that returns an isl pointer type.
  */
 string cpp_generator::isl_ptr(const string &classname, const string &expression,
-                              bool is_takes) {
-  return format("({0}).{1}()", expression, (is_takes) ? "Give" : "Get");
+	bool is_takes)
+{
+	return format("({0}).{1}()", expression, (is_takes) ? "Give" : "Get");
 }
 
 /**
@@ -848,8 +916,9 @@ string cpp_generator::isl_ptr(const string &classname, const string &expression,
  *
  * @return
  */
-string cpp_generator::cppTypeName(QualType ty) {
-  return type2cpp(extract_type(ty));
+string cpp_generator::cppTypeName(QualType ty)
+{
+	return type2cpp(extract_type(ty));
 }
 
 /**
@@ -867,19 +936,21 @@ string cpp_generator::cppTypeName(QualType ty) {
  * @return
  */
 bool cpp_generator::constructorShouldBeNamed(const isl_class &clazz,
-                                             const FunctionDecl *cons) {
-  const string fullname = cons->getName();
-  const string mname = clazz.name_without_class(fullname);
-  // A constructor need not be named when
-  // - the name is "read_from_str", or
-  // - the name is "from_" followed by a class name (e.g.
-  // "isl_set_from_basic_set"
-  //   to construct an isl_set from an isl_basic_set).
-  bool unnamed = mname == "read_from_str" ||
-                 (mname.find("from_") == 0 &&
-                  classes.find("isl_" + mname.substr(5)) != classes.end());
+	const FunctionDecl *cons)
+{
+	const string fullname = cons->getName();
+	const string mname = clazz.name_without_class(fullname);
+	// A constructor need not be named when
+	// - the name is "read_from_str", or
+	// - the name is "from_" followed by a class name (e.g.
+	// "isl_set_from_basic_set"
+	//   to construct an isl_set from an isl_basic_set).
+	bool unnamed =
+	    mname == "read_from_str" ||
+	    (mname.find("from_") == 0 &&
+	     classes.find("isl_" + mname.substr(5)) != classes.end());
 
-  return !unnamed;
+	return !unnamed;
 }
 
 /**
@@ -888,21 +959,23 @@ bool cpp_generator::constructorShouldBeNamed(const isl_class &clazz,
  * @param os
  * @param param
  */
-void cpp_generator::prepare_argument(ostream &os, const ParmVarDecl *param) {
-  QualType type = param->getOriginalType();
-  const string &name = param->getNameAsString();
-  if (is_unsigned(type)) {
-    print(os, "  assert({0} >= 0);\n", name);
-  } else if (is_isl_result_argument(type)) {
-    QualType pType = type->getPointeeType();
-    print(os, "  {0} _{1} = nullptr;\n", pType.getAsString(), name);
-  } else if (is_isl_class(type)) {
-    // Make sure the isl object is of the right type,
-    // i.e., it matches the compile time type of the
-    // parameter (an actual argument for, e.g., isl_union_set
-    // could be an isl_set at runtime).
-    print(os, "  {0} _cast_{1} = {1}.as{0}();\n", cppTypeName(type), name);
-  }
+void cpp_generator::prepare_argument(ostream &os, const ParmVarDecl *param)
+{
+	QualType type = param->getOriginalType();
+	const string &name = param->getNameAsString();
+	if (is_unsigned(type)) {
+		print(os, "  assert({0} >= 0);\n", name);
+	} else if (is_isl_result_argument(type)) {
+		QualType pType = type->getPointeeType();
+		print(os, "  {0} _{1} = nullptr;\n", pType.getAsString(), name);
+	} else if (is_isl_class(type)) {
+		// Make sure the isl object is of the right type,
+		// i.e., it matches the compile time type of the
+		// parameter (an actual argument for, e.g., isl_union_set
+		// could be an isl_set at runtime).
+		print(os, "  {0} _cast_{1} = {1}.as{0}();\n", cppTypeName(type),
+		      name);
+	}
 }
 
 /**
@@ -915,22 +988,24 @@ static int fn_ptr_id = 0;
  * @param os
  * @param param
  */
-void cpp_generator::print_argument(ostream &os, ParmVarDecl *param) {
-  const string &name = param->getNameAsString();
-  QualType type = param->getOriginalType();
-  if (is_isl_result_argument(type)) {
-    print(os, "({0}) ? &_{0} : nullptr", name);
-  } else if (is_isl_enum(type)) {
-    print(os, "({0}){1}", type.getAsString(), name);
-  } else if (is_isl_class(type)) {
-    os << isl_ptr(extract_type(type), "_cast_" + name, takes(param));
-  } else if (is_string(type)) {
-    print(os, "{0}.c_str()", name);
-  } else if (is_callback(type)) {
-    print(os, "get_fn_ptr<{0}>({1})", fn_ptr_id++, name);
-  } else {
-    os << name;
-  }
+void cpp_generator::print_argument(ostream &os, ParmVarDecl *param)
+{
+	const string &name = param->getNameAsString();
+	QualType type = param->getOriginalType();
+	if (is_isl_result_argument(type)) {
+		print(os, "({0}) ? &_{0} : nullptr", name);
+	} else if (is_isl_enum(type)) {
+		print(os, "({0}){1}", type.getAsString(), name);
+	} else if (is_isl_class(type)) {
+		os << isl_ptr(extract_type(type), "_cast_" + name,
+			      takes(param));
+	} else if (is_string(type)) {
+		print(os, "{0}.c_str()", name);
+	} else if (is_callback(type)) {
+		print(os, "get_fn_ptr<{0}>({1})", fn_ptr_id++, name);
+	} else {
+		os << name;
+	}
 }
 
 /**
@@ -941,19 +1016,20 @@ void cpp_generator::print_argument(ostream &os, ParmVarDecl *param) {
  * @param param
  */
 void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
-                                           const ParmVarDecl *param) {
-  QualType type = param->getOriginalType();
-  if (is_isl_result_argument(type)) {
-    const string &name = param->getNameAsString();
-    const string cppTyName = cppTypeName(type->getPointeeType());
+	const ParmVarDecl *param)
+{
+	QualType type = param->getOriginalType();
+	if (is_isl_result_argument(type)) {
+		const string &name = param->getNameAsString();
+		const string cppTyName = cppTypeName(type->getPointeeType());
 
-    print(os, "  if({0}) {{\n", name);
-    printHandleErrorCall(os, 2, name + " became a NULL pointer.");
-    print(os, "    {0} _tmp_{1} = {0} (_{1});\n"
-              "    {1}->reset(new {0}(_tmp_{1}));\n"
-              "  }}\n",
-          cppTyName, name);
-  }
+		print(os, "  if({0}) {{\n", name);
+		printHandleErrorCall(os, 2, name + " became a NULL pointer.");
+		print(os, "    {0} _tmp_{1} = {0} (_{1});\n"
+			  "    {1}->reset(new {0}(_tmp_{1}));\n"
+			  "  }}\n",
+		      cppTyName, name);
+	}
 }
 
 /**
@@ -964,8 +1040,9 @@ void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
  * @param enu
  */
 void cpp_generator::handle_enum_return(ostream &os, const string &res,
-                                       const isl_enum &enu) {
-  print(os, "  return ({0}){1};\n", type2cpp(enu.name), res);
+	const isl_enum &enu)
+{
+	print(os, "  return ({0}){1};\n", type2cpp(enu.name), res);
 }
 
 /**
@@ -976,30 +1053,33 @@ void cpp_generator::handle_enum_return(ostream &os, const string &res,
  * @param resVar
  */
 void cpp_generator::handle_return(ostream &os, const FunctionDecl *method,
-                                  const string &resVar) {
-  QualType rettype = method->getReturnType();
-  string fullname = method->getName();
-  if (is_isl_class(rettype)) {
-    string type = type2cpp(extract_type(method->getReturnType()));
-    printHandleErrorCall(os, 2, fullname + " returned a NULL pointer.");
-    print(os, "  return {0}({1});\n", type, resVar);
-  } else if (is_isl_enum(rettype)) {
-    handle_enum_return(os, resVar, find_enum(rettype));
-  } else if (is_bool(method)) {
-    printHandleErrorCall(os, 2, fullname + " signaled an error.");
-    print(os, "  return {0} != 0;\n", resVar);
-  } else if (is_string(rettype)) {
-    print(os, "  std::string {0}_;\n", resVar);
-    printHandleErrorCall(os, 2, fullname + " returned a NULL pointer.");
-    print(os, "  {0}_ = {0};\n", resVar);
+	const string &resVar)
+{
+	QualType rettype = method->getReturnType();
+	string fullname = method->getName();
+	if (is_isl_class(rettype)) {
+		string type = type2cpp(extract_type(method->getReturnType()));
+		printHandleErrorCall(os, 2,
+				     fullname + " returned a NULL pointer.");
+		print(os, "  return {0}({1});\n", type, resVar);
+	} else if (is_isl_enum(rettype)) {
+		handle_enum_return(os, resVar, find_enum(rettype));
+	} else if (is_bool(method)) {
+		printHandleErrorCall(os, 2, fullname + " signaled an error.");
+		print(os, "  return {0} != 0;\n", resVar);
+	} else if (is_string(rettype)) {
+		print(os, "  std::string {0}_;\n", resVar);
+		printHandleErrorCall(os, 2,
+				     fullname + " returned a NULL pointer.");
+		print(os, "  {0}_ = {0};\n", resVar);
 
-    if (gives(method)) {
-      print(os, "  free((void *){0});\n", resVar);
-    }
-    print(os, "  return {0}_;\n", resVar);
-  } else {
-    print(os, "  return {0};\n", resVar);
-  }
+		if (gives(method)) {
+			print(os, "  free((void *){0});\n", resVar);
+		}
+		print(os, "  return {0}_;\n", resVar);
+	} else {
+		print(os, "  return {0};\n", resVar);
+	}
 }
 
 /**
@@ -1010,22 +1090,23 @@ void cpp_generator::handle_return(ostream &os, const FunctionDecl *method,
  *
  * @return list of argument declarations
  */
-string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset) {
-  ostringstream os;
-  int num_params = method->getNumParams();
-  for (int i = offset; i < num_params; ++i) {
-    ParmVarDecl *param = method->getParamDecl(i);
-    bool isIsl = is_isl_class(param->getOriginalType());
-    string prefix = (i>offset) ? ", " : "";
+string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset)
+{
+	ostringstream os;
+	int num_params = method->getNumParams();
+	for (int i = offset; i < num_params; ++i) {
+		ParmVarDecl *param = method->getParamDecl(i);
+		bool isIsl = is_isl_class(param->getOriginalType());
+		string prefix = (i > offset) ? ", " : "";
 
-    if (isIsl)
-      print(os, "{0}const {1} &{2}", prefix, paramtype2cpp(param),
-            param->getNameAsString());
-    else
-      print(os, "{0}{1} {2}", prefix, paramtype2cpp(param),
-            param->getNameAsString());
-  }
-  return os.str();
+		if (isIsl)
+			print(os, "{0}const {1} &{2}", prefix,
+			      paramtype2cpp(param), param->getNameAsString());
+		else
+			print(os, "{0}{1} {2}", prefix, paramtype2cpp(param),
+			      param->getNameAsString());
+	}
+	return os.str();
 }
 
 /**
@@ -1036,19 +1117,20 @@ string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset) {
  *
  * @return
  */
-string cpp_generator::get_argument_list(FunctionDecl *method, int offset) {
-  ostringstream os;
-  int num_params = method->getNumParams();
+string cpp_generator::get_argument_list(FunctionDecl *method, int offset)
+{
+	ostringstream os;
+	int num_params = method->getNumParams();
 
-  if (offset)
-    os << "Ctx.unwrap()";
-  for (int i = offset; i < num_params; ++i) {
-    ParmVarDecl *param = method->getParamDecl(i);
-    if (i)
-      os << ", ";
-    print_argument(os, param);
-  }
-  return os.str();
+	if (offset)
+		os << "Ctx.unwrap()";
+	for (int i = offset; i < num_params; ++i) {
+		ParmVarDecl *param = method->getParamDecl(i);
+		if (i)
+			os << ", ";
+		print_argument(os, param);
+	}
+	return os.str();
 }
 
 /**
@@ -1079,48 +1161,51 @@ string cpp_generator::get_argument_list(FunctionDecl *method, int offset) {
  * @param super
  */
 void cpp_generator::print_method(ostream &os, isl_class &clazz,
-                                 FunctionDecl *method, bool subclass,
-                                 string super) {
-  string fullname = method->getName();
-  string cname = methodname2cpp(clazz, fullname);
-  string retName = rettype2cpp(method);
-  int num_params = method->getNumParams();
+				 FunctionDecl *method, bool subclass,
+				 string super)
+{
+	string fullname = method->getName();
+	string cname = methodname2cpp(clazz, fullname);
+	string retName = rettype2cpp(method);
+	int num_params = method->getNumParams();
 
-  // Create a comment block for our parameters.
-  ostringstream comment;
-  for (int i = 1; i < num_params; ++i) {
-    ParmVarDecl *param = method->getParamDecl(i);
-    string p_name = param->getNameAsString();
-    bool is_give = is_isl_result_argument(param->getOriginalType());
+	// Create a comment block for our parameters.
+	ostringstream comment;
+	for (int i = 1; i < num_params; ++i) {
+		ParmVarDecl *param = method->getParamDecl(i);
+		string p_name = param->getNameAsString();
+		bool is_give = is_isl_result_argument(param->getOriginalType());
 
-    if (is_give)
-      print(comment, "  ///@param {0} output parameter (isl_give)\n", p_name);
-    else
-      print(comment, "  ///@param {0}\n", p_name);
-  }
+		if (is_give)
+			print(comment,
+			      "  ///@param {0} output parameter (isl_give)\n",
+			      p_name);
+		else
+			print(comment, "  ///@param {0}\n", p_name);
+	}
 
-  os << endl;
-  print(os, "  ///@brief Generated from:\n"
-            "  ///       {0}\n"
-            "  ///\n"
-            "{1}"
-            "  ///\n"
-            "  ///@return A new {2}\n"
-            "  {2} {3}({4}) const;\n",
-        method->getNameAsString(), comment.str(), retName, cname,
-        get_argument_decl_list(method, 1));
+	os << endl;
+	print(os, "  ///@brief Generated from:\n"
+		  "  ///       {0}\n"
+		  "  ///\n"
+		  "{1}"
+		  "  ///\n"
+		  "  ///@return A new {2}\n"
+		  "  {2} {3}({4}) const;\n",
+	      method->getNameAsString(), comment.str(), retName, cname,
+	      get_argument_decl_list(method, 1));
 
-  if (is_isl_class(method->getReturnType())) {
-    os << endl;
-    print(os, "  ///@brief Generated from:\n"
-              "  ///       {0}\n"
-              "  ///\n"
-              "{1}"
-              "  ///\n"
-              "  void {2}Inplace({3});\n",
-          method->getNameAsString(), comment.str(), cname,
-          get_argument_decl_list(method, 1));
-  }
+	if (is_isl_class(method->getReturnType())) {
+		os << endl;
+		print(os, "  ///@brief Generated from:\n"
+			  "  ///       {0}\n"
+			  "  ///\n"
+			  "{1}"
+			  "  ///\n"
+			  "  void {2}Inplace({3});\n",
+		      method->getNameAsString(), comment.str(), cname,
+		      get_argument_decl_list(method, 1));
+	}
 }
 
 /**
@@ -1149,83 +1234,85 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
  * @param super
  */
 void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
-                                      FunctionDecl *method, bool subclass,
-                                      string super) {
-  string p_name = type2cpp(clazz.name);
-  string fullname = method->getName();
-  string cname = methodname2cpp(clazz, fullname);
-  string retName = rettype2cpp(method);
-  string retNameC = method->getReturnType().getAsString();
-  int num_params = method->getNumParams();
+				      FunctionDecl *method, bool subclass,
+				      string super)
+{
+	string p_name = type2cpp(clazz.name);
+	string fullname = method->getName();
+	string cname = methodname2cpp(clazz, fullname);
+	string retName = rettype2cpp(method);
+	string retNameC = method->getReturnType().getAsString();
+	int num_params = method->getNumParams();
 
-  // Prepare arguments
-  ostringstream prepare_os;
-  for (int i = 1; i < num_params; ++i) {
-    ParmVarDecl *param = method->getParamDecl(i);
-    prepare_argument(prepare_os, param);
-  }
+	// Prepare arguments
+	ostringstream prepare_os;
+	for (int i = 1; i < num_params; ++i) {
+		ParmVarDecl *param = method->getParamDecl(i);
+		prepare_argument(prepare_os, param);
+	}
 
-  // Create argument list
-  ostringstream param_os;
-  for (int i = 1; i < num_params; ++i) {
-    ParmVarDecl *param = method->getParamDecl(i);
-    param_os << ", ";
-    print_argument(param_os, param);
-  }
+	// Create argument list
+	ostringstream param_os;
+	for (int i = 1; i < num_params; ++i) {
+		ParmVarDecl *param = method->getParamDecl(i);
+		param_os << ", ";
+		print_argument(param_os, param);
+	}
 
-  // Handle result args
-  ostringstream result_os;
-  for (int i = 1; i < num_params; ++i) {
-    const ParmVarDecl *param = method->getParamDecl(i);
-    handle_result_argument(result_os, "Ctx", param);
-  }
+	// Handle result args
+	ostringstream result_os;
+	for (int i = 1; i < num_params; ++i) {
+		const ParmVarDecl *param = method->getParamDecl(i);
+		handle_result_argument(result_os, "Ctx", param);
+	}
 
-  ostringstream handle_error_os;
-  printHandleErrorCall(handle_error_os, 2,
-                       fullname + " returned a NULL pointer.");
+	ostringstream handle_error_os;
+	printHandleErrorCall(handle_error_os, 2,
+			     fullname + " returned a NULL pointer.");
 
-  // Handle return
-  ostringstream return_os;
-  handle_return(return_os, method, "res");
+	// Handle return
+	ostringstream return_os;
+	handle_return(return_os, method, "res");
 
-  os << endl;
-  print(os, "inline {0} {2}::{1}({3}) const {{\n"
-            "  Ctx.lock();\n"
-            "  {2} self = as{2}();\n"
-            "  // Prepare arguments\n"
-            "{4}"
-            "  // Call {6}\n"
-            "  {5} res = {6}({7}{8});\n"
-            "  // Handle result argument(s)\n"
-            "{9}"
-            "  Ctx.unlock();\n"
-            "  // Handle return\n"
-            "{10}"
-            "}}\n",
-        retName, cname, p_name, get_argument_decl_list(method, 1),
-        prepare_os.str(), retNameC, fullname,
-        isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-        param_os.str(), result_os.str(), return_os.str());
+	os << endl;
+	print(os, "inline {0} {2}::{1}({3}) const {{\n"
+		  "  Ctx.lock();\n"
+		  "  {2} self = as{2}();\n"
+		  "  // Prepare arguments\n"
+		  "{4}"
+		  "  // Call {6}\n"
+		  "  {5} res = {6}({7}{8});\n"
+		  "  // Handle result argument(s)\n"
+		  "{9}"
+		  "  Ctx.unlock();\n"
+		  "  // Handle return\n"
+		  "{10}"
+		  "}}\n",
+	      retName, cname, p_name, get_argument_decl_list(method, 1),
+	      prepare_os.str(), retNameC, fullname,
+	      isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
+	      param_os.str(), result_os.str(), return_os.str());
 
-  if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
-    os << endl;
-    print(os, "/// @brief inplace variant\n"
-              "inline void {1}::{0}Inplace({2}) {{\n"
-              "  Ctx.lock();\n"
-              "  // Prepare arguments\n"
-              "{3}"
-              "  // Call {5}\n"
-              "  This = (void *){5}(({4} *)This{7});\n"
-              "  // Handle result argument(s)\n"
-              "{8}"
-              "  Ctx.unlock();\n"
-              "{9}"
-              "}}\n",
-          cname, p_name, get_argument_decl_list(method, 1), prepare_os.str(),
-          clazz.name, fullname,
-          isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-          param_os.str(), result_os.str(), handle_error_os.str());
-  }
+	if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
+		os << endl;
+		print(
+		    os, "/// @brief inplace variant\n"
+			"inline void {1}::{0}Inplace({2}) {{\n"
+			"  Ctx.lock();\n"
+			"  // Prepare arguments\n"
+			"{3}"
+			"  // Call {5}\n"
+			"  This = (void *){5}(({4} *)This{7});\n"
+			"  // Handle result argument(s)\n"
+			"{8}"
+			"  Ctx.unlock();\n"
+			"{9}"
+			"}}\n",
+		    cname, p_name, get_argument_decl_list(method, 1),
+		    prepare_os.str(), clazz.name, fullname,
+		    isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
+		    param_os.str(), result_os.str(), handle_error_os.str());
+	}
 }
 
 /**
@@ -1245,33 +1332,34 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
  * @param asNamedConstructor
  */
 void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
-                                      FunctionDecl *cons,
-                                      bool asNamedConstructor) {
-  const string fullname = cons->getName();
-  const string cname = methodname2cpp(clazz, fullname);
-  const string jclass = type2cpp(clazz.name);
-  int ctxSrc = -1;
-  int num_params = cons->getNumParams();
-  int drop_ctx = first_arg_is_isl_ctx(cons);
-  const string obj = asNamedConstructor ? "That" : "This";
+				      FunctionDecl *cons,
+				      bool asNamedConstructor)
+{
+	const string fullname = cons->getName();
+	const string cname = methodname2cpp(clazz, fullname);
+	const string jclass = type2cpp(clazz.name);
+	int ctxSrc = -1;
+	int num_params = cons->getNumParams();
+	int drop_ctx = first_arg_is_isl_ctx(cons);
+	const string obj = asNamedConstructor ? "That" : "This";
 
-  print(os, "  /// @brief Constructor for {0}\n"
-            "  ///\n",
-        fullname);
+	print(os, "  /// @brief Constructor for {0}\n"
+		  "  ///\n",
+	      fullname);
 
-  for (int i = drop_ctx; i < num_params; ++i) {
-    ParmVarDecl *param = cons->getParamDecl(i);
-    print(os, "  /// @param {0}\n", param->getNameAsString());
-  }
+	for (int i = drop_ctx; i < num_params; ++i) {
+		ParmVarDecl *param = cons->getParamDecl(i);
+		print(os, "  /// @param {0}\n", param->getNameAsString());
+	}
 
-  if (asNamedConstructor) {
-    print(os, "  static {0} {1}({2});\n", jclass, cname,
-          get_argument_decl_list(cons, drop_ctx));
-  } else {
-    print(os, "  /// {0}\n"
-              "  explicit {1}({2});\n",
-          fullname, jclass, get_argument_decl_list(cons, drop_ctx));
-  }
+	if (asNamedConstructor) {
+		print(os, "  static {0} {1}({2});\n", jclass, cname,
+		      get_argument_decl_list(cons, drop_ctx));
+	} else {
+		print(os, "  /// {0}\n"
+			  "  explicit {1}({2});\n",
+		      fullname, jclass, get_argument_decl_list(cons, drop_ctx));
+	}
 }
 
 /**
@@ -1283,88 +1371,94 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
  * @param asNamedConstructor
  */
 void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
-                                           FunctionDecl *cons,
-                                           bool asNamedConstructor) {
-  const string fullname = cons->getName();
-  const string cname = methodname2cpp(clazz, fullname);
-  const string jclass = type2cpp(clazz.name);
-  string super;
-  bool subclass = is_subclass(clazz.type, super);
-  int ctxSrc = -1;
-  int num_params = cons->getNumParams();
-  int drop_ctx = first_arg_is_isl_ctx(cons);
+					   FunctionDecl *cons,
+					   bool asNamedConstructor)
+{
+	const string fullname = cons->getName();
+	const string cname = methodname2cpp(clazz, fullname);
+	const string jclass = type2cpp(clazz.name);
+	string super;
+	bool subclass = is_subclass(clazz.type, super);
+	int ctxSrc = -1;
+	int num_params = cons->getNumParams();
+	int drop_ctx = first_arg_is_isl_ctx(cons);
 
-  // Find us a context.
-  for (int i = drop_ctx; i < num_params; ++i) {
-    ParmVarDecl *param = cons->getParamDecl(i);
-    if (is_isl_class(param->getOriginalType()))
-      ctxSrc = i;
-  }
+	// Find us a context.
+	for (int i = drop_ctx; i < num_params; ++i) {
+		ParmVarDecl *param = cons->getParamDecl(i);
+		if (is_isl_class(param->getOriginalType()))
+			ctxSrc = i;
+	}
 
-  string context_source =
-      (ctxSrc >= 0)
-          ? format("{}.ctx()", cons->getParamDecl(ctxSrc)->getNameAsString())
-          : "Context::get()";
+	string context_source =
+	    (ctxSrc >= 0) ? format("{}.ctx()", cons->getParamDecl(ctxSrc)
+						   ->getNameAsString())
+			  : "Context::get()";
 
-  ostringstream prepare_os;
-  for (int i = drop_ctx; i < num_params; ++i) {
-    ParmVarDecl *param = cons->getParamDecl(i);
-    prepare_argument(prepare_os, param);
-  }
+	ostringstream prepare_os;
+	for (int i = drop_ctx; i < num_params; ++i) {
+		ParmVarDecl *param = cons->getParamDecl(i);
+		prepare_argument(prepare_os, param);
+	}
 
-  string argument_list = get_argument_list(cons, drop_ctx);
-  string argument_decl_list = get_argument_decl_list(cons, drop_ctx);
+	string argument_list = get_argument_list(cons, drop_ctx);
+	string argument_decl_list = get_argument_decl_list(cons, drop_ctx);
 
-  ostringstream handle_error_os;
-  printHandleErrorCall(handle_error_os, 2,
-                       fullname + " returned a NULL pointer.");
+	ostringstream handle_error_os;
+	printHandleErrorCall(handle_error_os, 2,
+			     fullname + " returned a NULL pointer.");
 
-  os << endl;
-  if (asNamedConstructor) {
-    print(os, "inline {0} {0}::{1}({2}) {{\n"
-              "  Context &Ctx = {3};\n"
-              "{4}"
-              "  Ctx.lock();\n"
-              "  {5} *That = {6}({7});\n"
-              "{8}"
-              "  Ctx.unlock();\n",
-          jclass, cname, argument_decl_list, context_source, prepare_os.str(),
-          clazz.name, fullname, argument_list, handle_error_os.str());
-    if (can_copy(clazz)) {
-      print(os, "  return {0}(Ctx, That);\n", jclass);
-    } else {
-      print(os, "  std::shared_ptr<ptr> _That(new ptr(That));\n"
-                "  return {0}(Ctx, _That);\n",
-            jclass);
-    }
-  } else {
-    string base_class = (!subclass) ? "IslBase" : type2cpp(super);
-    print(os, "// {3}\n"
-              "inline {0}::{0}({2}) : {4}({5}, (void *)NULL) {{\n"
-              "{6}"
-              "  Ctx.lock();\n"
-              "  {7} *That = {3}({8});\n"
-              "{9}"
-              "  Ctx.unlock();\n",
-          jclass, cname, argument_decl_list, fullname, base_class,
-          context_source, prepare_os.str(), clazz.name, argument_list,
-          handle_error_os.str());
-    if (can_copy(clazz)) {
-      print(os, "  This = That;\n");
-    } else {
-      print(os, "  This = std::shared_ptr<ptr>(new ptr(That));\n");
-    }
-  }
+	os << endl;
+	if (asNamedConstructor) {
+		print(os, "inline {0} {0}::{1}({2}) {{\n"
+			  "  Context &Ctx = {3};\n"
+			  "{4}"
+			  "  Ctx.lock();\n"
+			  "  {5} *That = {6}({7});\n"
+			  "{8}"
+			  "  Ctx.unlock();\n",
+		      jclass, cname, argument_decl_list, context_source,
+		      prepare_os.str(), clazz.name, fullname, argument_list,
+		      handle_error_os.str());
+		if (can_copy(clazz)) {
+			print(os, "  return {0}(Ctx, That);\n", jclass);
+		} else {
+			print(os,
+			      "  std::shared_ptr<ptr> _That(new ptr(That));\n"
+			      "  return {0}(Ctx, _That);\n",
+			      jclass);
+		}
+	} else {
+		string base_class = (!subclass) ? "IslBase" : type2cpp(super);
+		print(os, "// {3}\n"
+			  "inline {0}::{0}({2}) : {4}({5}, (void *)NULL) {{\n"
+			  "{6}"
+			  "  Ctx.lock();\n"
+			  "  {7} *That = {3}({8});\n"
+			  "{9}"
+			  "  Ctx.unlock();\n",
+		      jclass, cname, argument_decl_list, fullname, base_class,
+		      context_source, prepare_os.str(), clazz.name,
+		      argument_list, handle_error_os.str());
+		if (can_copy(clazz)) {
+			print(os, "  This = That;\n");
+		} else {
+			print(
+			    os,
+			    "  This = std::shared_ptr<ptr>(new ptr(That));\n");
+		}
+	}
 
-  print(os, "}}\n");
+	print(os, "}}\n");
 }
 
 /**
  * @brief Generate all
  */
-void cpp_generator::generate() {
-  generateClasses();
-  generateEnums();
+void cpp_generator::generate()
+{
+	generateClasses();
+	generateEnums();
 }
 
 /**
@@ -1372,63 +1466,64 @@ void cpp_generator::generate() {
  *
  * We perform locking in here to restore thread safety.
  */
-void cpp_generator::print_isl_ctx_class() {
-  string fileName = includePath + "Context.h";
-  ostream &os = outputfile(fileName);
+void cpp_generator::print_isl_ctx_class()
+{
+	string fileName = includePath + "Context.h";
+	ostream &os = outputfile(fileName);
 
-  os << getGuardHeader("Context");
-  print(os,
-        "#include \"isl/{0}.h\"\n"
-        "\n"
-        "#include <mutex>\n"
-        "#include <isl/options.h>\n"
-        "\n"
-        "namespace isl{{\n"
-        "class Context {{\n"
-        "private:\n"
-        "  isl_ctx *This;\n"
-        "  std::recursive_mutex M;\n"
-        "\n"
-        "public:\n"
-        "  static Context &get(isl_ctx *Other = NULL) {{\n"
-        "    static Context instance(Other);\n"
-        "    return instance;\n"
-        "  }}\n"
-        "\n"
-        "  void lock() {{\n"
-        "    M.lock();\n"
-        "  }}\n"
-        "\n"
-        "  void unlock() {{\n"
-        "    M.unlock();\n"
-        "  }}\n"
-        "\n"
-        "  isl_ctx *unwrap() {{\n"
-        "    return This;\n"
-        "  }}\n"
-        "\n"
-        "  bool hasError() {{\n"
-        "    enum isl_error err = isl_ctx_last_error(This);\n"
-        "    int goe = isl_options_get_on_error(This);\n"
-        "    return (err != isl_error_none) && goe != ISL_ON_ERROR_CONTINUE;\n"
-        "  }}\n"
-        "\n"
-        "private:\n"
-        "  Context(isl_ctx *Other = NULL) {{\n"
-        "    if (This)\n"
-        "      return;\n"
-        "    if (Other)\n"
-        "      This = Other;\n"
-        "    else\n"
-        "      This = isl_ctx_alloc();\n"
-        "  }} // Invisible.\n"
-        "\n"
-        "  Context(Context const &); // Do not implement\n"
-        "  void operator=(Context const &); // Do not implement\n"
-        "}};\n"
-        "}} //namespace isl\n",
-        getIncludeForIslObj("isl_ctx"));
-  os << getGuardFooter("Context");
+	os << getGuardHeader("Context");
+	print(os, "#include \"isl/{0}.h\"\n"
+		  "\n"
+		  "#include <mutex>\n"
+		  "#include <isl/options.h>\n"
+		  "\n"
+		  "namespace isl{{\n"
+		  "class Context {{\n"
+		  "private:\n"
+		  "  isl_ctx *This;\n"
+		  "  std::recursive_mutex M;\n"
+		  "\n"
+		  "public:\n"
+		  "  static Context &get(isl_ctx *Other = NULL) {{\n"
+		  "    static Context instance(Other);\n"
+		  "    return instance;\n"
+		  "  }}\n"
+		  "\n"
+		  "  void lock() {{\n"
+		  "    M.lock();\n"
+		  "  }}\n"
+		  "\n"
+		  "  void unlock() {{\n"
+		  "    M.unlock();\n"
+		  "  }}\n"
+		  "\n"
+		  "  isl_ctx *unwrap() {{\n"
+		  "    return This;\n"
+		  "  }}\n"
+		  "\n"
+		  "  bool hasError() {{\n"
+		  "    enum isl_error err = isl_ctx_last_error(This);\n"
+		  "    int goe = isl_options_get_on_error(This);\n"
+		  "    return (err != isl_error_none) && goe != "
+		  "ISL_ON_ERROR_CONTINUE;\n"
+		  "  }}\n"
+		  "\n"
+		  "private:\n"
+		  "  Context(isl_ctx *Other = NULL) {{\n"
+		  "    if (This)\n"
+		  "      return;\n"
+		  "    if (Other)\n"
+		  "      This = Other;\n"
+		  "    else\n"
+		  "      This = isl_ctx_alloc();\n"
+		  "  }} // Invisible.\n"
+		  "\n"
+		  "  Context(Context const &); // Do not implement\n"
+		  "  void operator=(Context const &); // Do not implement\n"
+		  "}};\n"
+		  "}} //namespace isl\n",
+	      getIncludeForIslObj("isl_ctx"));
+	os << getGuardFooter("Context");
 }
 
 /**
@@ -1447,8 +1542,9 @@ static set<string> NonCopyable = {"isl_schedule", "isl_printer"};
  *
  * @return
  */
-bool cpp_generator::can_copy(isl_class &clazz) {
-  return NonCopyable.count(clazz.name) == 0;
+bool cpp_generator::can_copy(isl_class &clazz)
+{
+	return NonCopyable.count(clazz.name) == 0;
 }
 
 /**
@@ -1470,119 +1566,124 @@ bool cpp_generator::can_copy(isl_class &clazz) {
  *
  * @param clazz
  */
-void cpp_generator::print_class(isl_class &clazz) {
-  string super;
-  bool subclass = is_subclass(clazz.type, super);
-  bool can_cp = can_copy(clazz);
-  cpp_class_printer p(clazz, subclass, can_cp, super, is_inplace(clazz));
+void cpp_generator::print_class(isl_class &clazz)
+{
+	string super;
+	bool subclass = is_subclass(clazz.type, super);
+	bool can_cp = can_copy(clazz);
+	cpp_class_printer p(clazz, subclass, can_cp, super, is_inplace(clazz));
 
-  const string &name = clazz.name;
-  string p_name = type2cpp(name);
-  set<FunctionDecl *>::iterator in;
-  string fileName = includePath + p_name + ".h";
-  ostream &os = outputfile(fileName);
-  set<pair<string, bool>> Deps = getDependencies(clazz);
+	const string &name = clazz.name;
+	string p_name = type2cpp(name);
+	set<FunctionDecl *>::iterator in;
+	string fileName = includePath + p_name + ".h";
+	ostream &os = outputfile(fileName);
+	set<pair<string, bool>> Deps = getDependencies(clazz);
 
-  os << getGuardHeader(p_name) << endl;
+	os << getGuardHeader(p_name) << endl;
 
-  if (!IslExtraDeps.count(name))
-    print(os, "#include \"isl/{}.h\"\n", getIncludeForIslObj(name));
+	if (!IslExtraDeps.count(name))
+		print(os, "#include \"isl/{}.h\"\n", getIncludeForIslObj(name));
 
-  vector<string> extras = IslExtraDeps[name];
-  for (string extra : extras) {
-    print(os, "#include \"isl/{}.h\"\n", getIncludeForIslObj(extra));
-  }
+	vector<string> extras = IslExtraDeps[name];
+	for (string extra : extras) {
+		print(os, "#include \"isl/{}.h\"\n",
+		      getIncludeForIslObj(extra));
+	}
 
-  os << getIncludes(getDependencies(clazz)) << endl;
-  print(os, "#include \"isl/IslFnPtr.h\"\n");
+	os << getIncludes(getDependencies(clazz)) << endl;
+	print(os, "#include \"isl/IslFnPtr.h\"\n");
 
-  os << endl;
+	os << endl;
 
-  string base_class = (subclass) ? type2cpp(super) : "IslBase";
+	string base_class = (subclass) ? type2cpp(super) : "IslBase";
 
-  print(os, "namespace isl {{\n"
-            "{0}"
-            "\n"
-            "class {1} : public {2} {{\n"
-            "protected:\n",
-        getForwardDecls(Deps), p_name, base_class);
+	print(os, "namespace isl {{\n"
+		  "{0}"
+		  "\n"
+		  "class {1} : public {2} {{\n"
+		  "protected:\n",
+	      getForwardDecls(Deps), p_name, base_class);
 
-  if (!can_cp) {
-    print_ptr_wrapper(os, name);
-    os << endl;
-    print(os, "  std::shared_ptr<ptr> This;\n"
-              "\n");
-  }
+	if (!can_cp) {
+		print_ptr_wrapper(os, name);
+		os << endl;
+		print(os, "  std::shared_ptr<ptr> This;\n"
+			  "\n");
+	}
 
-  p.print_explicit_constructors_h(os);
+	p.print_explicit_constructors_h(os);
 
-  print(os, "\n"
-            "public:\n");
-  if (can_cp) {
-    os << endl;
-    print(
-        os,
-        "  /// @brief Implement lt via pointer comparison of the\n"
-        "  ///        wrapped isl objects.\n"
-        "  bool operator<(const {0} &RHS) const {{ return This < RHS.This; }}\n",
-        p_name);
-    os << endl;
-  }
+	print(os, "\n"
+		  "public:\n");
+	if (can_cp) {
+		os << endl;
+		print(
+		    os,
+		    "  /// @brief Implement lt via pointer comparison of the\n"
+		    "  ///        wrapped isl objects.\n"
+		    "  bool operator<(const {0} &RHS) const {{ return This < "
+		    "RHS.This; }}\n",
+		    p_name);
+		os << endl;
+	}
 
-  p.print_api_wrapper_h(os);
-  p.print_api_give_h(os);
+	p.print_api_wrapper_h(os);
+	p.print_api_give_h(os);
 
-  p.print_copy_constructor_h(os);
-  p.print_copy_assignment_h(os);
-  p.print_move_constructor_h(os);
-  p.print_move_assignment_h(os);
+	p.print_copy_constructor_h(os);
+	p.print_copy_assignment_h(os);
+	p.print_move_constructor_h(os);
+	p.print_move_assignment_h(os);
 
-  for (in = clazz.constructors.begin(); in != clazz.constructors.end(); ++in) {
-    bool asNamed = constructorShouldBeNamed(clazz, *in);
-    // We always print a "named" constructor (i.e., a static function
-    // to construct an object).
-    os << endl;
-    print_constructor(os, clazz, *in, true);
-    // Some constructors are also made available as
-    // constructors of the class.
-    if (!asNamed)
-      print_constructor(os, clazz, *in, false);
-  }
+	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
+	     ++in) {
+		bool asNamed = constructorShouldBeNamed(clazz, *in);
+		// We always print a "named" constructor (i.e., a static
+		// function
+		// to construct an object).
+		os << endl;
+		print_constructor(os, clazz, *in, true);
+		// Some constructors are also made available as
+		// constructors of the class.
+		if (!asNamed)
+			print_constructor(os, clazz, *in, false);
+	}
 
-  p.print_api_unwrapper_h(os);
+	p.print_api_unwrapper_h(os);
 
-  // We do not free objects of classes that have in-place update
-  // (e.g., isl_band). These values exist only in dependence of
-  // parent objects and are freed when the parent object goes away.
-  p.print_destructor_h(os);
+	// We do not free objects of classes that have in-place update
+	// (e.g., isl_band). These values exist only in dependence of
+	// parent objects and are freed when the parent object goes away.
+	p.print_destructor_h(os);
 
-  if (can_be_printed(clazz)) {
-    p.print_print_methods_h(os);
-  }
+	if (can_be_printed(clazz)) {
+		p.print_print_methods_h(os);
+	}
 
-  // Print conversion functions for every super class.
-  os << endl;
-  print(os, "  virtual {0} as{0}() const;\n", p_name);
+	// Print conversion functions for every super class.
+	os << endl;
+	print(os, "  virtual {0} as{0}() const;\n", p_name);
 
-  isl_class *s_clazz = &clazz;
-  string s_name;
-  while (is_subclass(s_clazz->type, s_name)) {
-    s_clazz = &classes[s_name];
-    s_name = type2cpp(s_name);
-    os << endl;
-    print(os, "  virtual {0} as{0}() const override;\n", s_name);
-  }
+	isl_class *s_clazz = &clazz;
+	string s_name;
+	while (is_subclass(s_clazz->type, s_name)) {
+		s_clazz = &classes[s_name];
+		s_name = type2cpp(s_name);
+		os << endl;
+		print(os, "  virtual {0} as{0}() const override;\n", s_name);
+	}
 
-  for (auto method : clazz.methods)
-    print_method(os, clazz, method, subclass, super);
+	for (auto method : clazz.methods)
+		print_method(os, clazz, method, subclass, super);
 
-  print(os, "\n"
-            "}};\n"
-            "}} // namespace isl\n");
-  // if (name.compare("isl_val") == 0)
-  //  print_additional_val_methods(os);
+	print(os, "\n"
+		  "}};\n"
+		  "}} // namespace isl\n");
+	// if (name.compare("isl_val") == 0)
+	//  print_additional_val_methods(os);
 
-  os << getGuardFooter(p_name);
+	os << getGuardFooter(p_name);
 }
 
 /**
@@ -1590,108 +1691,112 @@ void cpp_generator::print_class(isl_class &clazz) {
  *
  * @param clazz
  */
-void cpp_generator::print_class_impl(isl_class &clazz) {
-  string super;
-  const string &name = clazz.name;
-  string p_name = type2cpp(name);
-  bool subclass = is_subclass(clazz.type, super);
-  bool can_cp = can_copy(clazz);
+void cpp_generator::print_class_impl(isl_class &clazz)
+{
+	string super;
+	const string &name = clazz.name;
+	string p_name = type2cpp(name);
+	bool subclass = is_subclass(clazz.type, super);
+	bool can_cp = can_copy(clazz);
 
-  cpp_class_printer p(clazz, subclass, can_cp, super, is_inplace(clazz));
+	cpp_class_printer p(clazz, subclass, can_cp, super, is_inplace(clazz));
 
-  set<FunctionDecl *>::iterator in;
-  string fileName = includePath + p_name + ".hpp";
-  ostream &os = outputfile(fileName);
+	set<FunctionDecl *>::iterator in;
+	string fileName = includePath + p_name + ".hpp";
+	ostream &os = outputfile(fileName);
 
-  os << getGuardHeader(p_name + "_IMPL");
-  print(os, "#include \"isl/{0}.h\"\n"
-            "\n"
-            "{1}"
-            "\n"
-            "#include <cassert>\n"
-            "\n"
-            "namespace isl {{\n",
-        p_name, getIncludes(getDependencies(clazz), true));
+	os << getGuardHeader(p_name + "_IMPL");
+	print(os, "#include \"isl/{0}.h\"\n"
+		  "\n"
+		  "{1}"
+		  "\n"
+		  "#include <cassert>\n"
+		  "\n"
+		  "namespace isl {{\n",
+	      p_name, getIncludes(getDependencies(clazz), true));
 
-  p.print_api_wrapper(os);
-  p.print_copy_assignment(os);
+	p.print_api_wrapper(os);
+	p.print_copy_assignment(os);
 
-  for (in = clazz.constructors.begin(); in != clazz.constructors.end(); ++in) {
-    bool asNamed = constructorShouldBeNamed(clazz, *in);
-    // We always print a "named" constructor (i.e., a static function
-    // to construct an object).
-    print_constructor_impl(os, clazz, *in, true);
-    // Some constructors are also made available as
-    // constructors of the class.
-    if (!asNamed)
-      print_constructor_impl(os, clazz, *in, false);
-  }
+	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
+	     ++in) {
+		bool asNamed = constructorShouldBeNamed(clazz, *in);
+		// We always print a "named" constructor (i.e., a static
+		// function
+		// to construct an object).
+		print_constructor_impl(os, clazz, *in, true);
+		// Some constructors are also made available as
+		// constructors of the class.
+		if (!asNamed)
+			print_constructor_impl(os, clazz, *in, false);
+	}
 
-  // We do not free objects of classes that have in-place update
-  // (e.g., isl_band). These values exist only in dependence of
-  // parent objects and are freed when the parent object goes away.
-  if (!is_inplace(clazz)) {
-    p.print_destructor(os);
-  }
+	// We do not free objects of classes that have in-place update
+	// (e.g., isl_band). These values exist only in dependence of
+	// parent objects and are freed when the parent object goes away.
+	if (!is_inplace(clazz)) {
+		p.print_destructor(os);
+	}
 
-  p.print_api_give(os);
-  p.print_api_unwrapper(os);
+	p.print_api_give(os);
+	p.print_api_unwrapper(os);
 
-  if (can_be_printed(clazz)) {
-    p.print_print_methods(os);
-  }
+	if (can_be_printed(clazz)) {
+		p.print_print_methods(os);
+	}
 
-  // Print conversion functions for every super class.
-  os << endl;
-  if (can_cp) {
-    print(os, "inline {0} {0}::as{0}() const {{\n"
-              "  return {0}(GetCopy());\n"
-              "}}\n",
-          p_name);
-  } else {
-    print(os, "inline {0} {0}::as{0}() const {{\n"
-              "  return *const_cast<{0} *>(this);\n"
-              "}}\n",
-          p_name);
-  }
+	// Print conversion functions for every super class.
+	os << endl;
+	if (can_cp) {
+		print(os, "inline {0} {0}::as{0}() const {{\n"
+			  "  return {0}(GetCopy());\n"
+			  "}}\n",
+		      p_name);
+	} else {
+		print(os, "inline {0} {0}::as{0}() const {{\n"
+			  "  return *const_cast<{0} *>(this);\n"
+			  "}}\n",
+		      p_name);
+	}
 
-  isl_class *s_clazz = &clazz;
-  string s_name;
+	isl_class *s_clazz = &clazz;
+	string s_name;
 
-  while (is_subclass(s_clazz->type, s_name)) {
-    s_clazz = &classes[s_name];
-    s_name = type2cpp(s_name);
-    os << endl;
-    print(os, "inline {0} {1}::as{0}() const {{\n"
-              "  return {0}(*this);\n"
-              "}}\n",
-          s_name, p_name);
-  }
+	while (is_subclass(s_clazz->type, s_name)) {
+		s_clazz = &classes[s_name];
+		s_name = type2cpp(s_name);
+		os << endl;
+		print(os, "inline {0} {1}::as{0}() const {{\n"
+			  "  return {0}(*this);\n"
+			  "}}\n",
+		      s_name, p_name);
+	}
 
-  for (in = clazz.methods.begin(); in != clazz.methods.end(); ++in)
-    print_method_impl(os, clazz, *in, subclass, super);
+	for (in = clazz.methods.begin(); in != clazz.methods.end(); ++in)
+		print_method_impl(os, clazz, *in, subclass, super);
 
-  os << endl;
-  // if (name.compare("isl_val") == 0)
-  //  print_additional_val_methods(os);
-  print(os, "}} // namespace isl\n");
-  os << getGuardFooter(p_name + "_IMPL");
+	os << endl;
+	// if (name.compare("isl_val") == 0)
+	//  print_additional_val_methods(os);
+	print(os, "}} // namespace isl\n");
+	os << getGuardFooter(p_name + "_IMPL");
 }
 
 /**
  * @brief Generate all classes.
  */
-void cpp_generator::generateClasses() {
-  print_isl_ctx_class();
-  print_isl_obj_class();
-  print_isl_exception_class();
-  print_function_ptr_helper();
+void cpp_generator::generateClasses()
+{
+	print_isl_ctx_class();
+	print_isl_obj_class();
+	print_isl_exception_class();
+	print_function_ptr_helper();
 
-  map<string, isl_class>::iterator ci;
-  for (ci = classes.begin(); ci != classes.end(); ++ci) {
-    print_class(ci->second);
-    print_class_impl(ci->second);
-  }
+	map<string, isl_class>::iterator ci;
+	for (ci = classes.begin(); ci != classes.end(); ++ci) {
+		print_class(ci->second);
+		print_class_impl(ci->second);
+	}
 }
 
 /**
@@ -1706,16 +1811,12 @@ void cpp_generator::generateClasses() {
  * @param Deps The set of dependencies we insert into.
  * @param Dep The dependency pair we want to include.
  */
-static void insertDep(
-    set<pair<string, bool>> &Deps,
-    pair<
-        string,
-        bool /* True, if we want an include. False, if we want a forward decl */>
-        Dep) {
-  pair<string, bool> complement = make_pair(Dep.first, !Dep.second);
-  if (Deps.count(complement))
-    Deps.erase(complement);
-  Deps.insert(Dep);
+static void insertDep(set<pair<string, bool>> &Deps, pair<string, bool> Dep)
+{
+	pair<string, bool> complement = make_pair(Dep.first, !Dep.second);
+	if (Deps.count(complement))
+		Deps.erase(complement);
+	Deps.insert(Dep);
 }
 
 /**
@@ -1726,27 +1827,28 @@ static void insertDep(
  * @param Ty
  */
 void cpp_generator::insertIfDependency(string p_name,
-                                       set<pair<string, bool>> &Deps,
-                                       QualType &Ty) {
-  if (is_isl_class(Ty) || is_isl_enum(Ty)) {
-    string d_name = paramtype2cpp(Ty);
-    if (d_name != p_name) {
-      insertDep(Deps, make_pair(d_name, is_isl_enum(Ty)));
-    }
-  } else if (is_isl_result_argument(Ty)) {
-    QualType pTy = Ty->getPointeeType();
-    insertIfDependency(p_name, Deps, pTy);
-  } else if (Ty->isPointerType()) {
-    QualType pTy = Ty->getPointeeType();
-    if (pTy->isFunctionType()) {
-      const FunctionProtoType *ft = pTy->getAs<FunctionProtoType>();
-      unsigned nArgs = ft->getNumArgs();
-      for (unsigned i = 0; i < nArgs; ++i) {
-        QualType argTy = ft->getArgType(i);
-        insertIfDependency(p_name, Deps, argTy);
-      }
-    }
-  }
+	set<pair<string, bool>> &Deps, QualType &Ty)
+{
+	if (is_isl_class(Ty) || is_isl_enum(Ty)) {
+		string d_name = paramtype2cpp(Ty);
+		if (d_name != p_name) {
+			insertDep(Deps, make_pair(d_name, is_isl_enum(Ty)));
+		}
+	} else if (is_isl_result_argument(Ty)) {
+		QualType pTy = Ty->getPointeeType();
+		insertIfDependency(p_name, Deps, pTy);
+	} else if (Ty->isPointerType()) {
+		QualType pTy = Ty->getPointeeType();
+		if (pTy->isFunctionType()) {
+			const FunctionProtoType *ft =
+			    pTy->getAs<FunctionProtoType>();
+			unsigned nArgs = ft->getNumArgs();
+			for (unsigned i = 0; i < nArgs; ++i) {
+				QualType argTy = ft->getArgType(i);
+				insertIfDependency(p_name, Deps, argTy);
+			}
+		}
+	}
 }
 
 /**
@@ -1756,54 +1858,56 @@ void cpp_generator::insertIfDependency(string p_name,
  *
  * @return
  */
-set<pair<string, bool>> cpp_generator::getDependencies(isl_class &clazz) {
-  set<pair<string, bool>> Deps;
-  set<clang::FunctionDecl *>::iterator it;
-  set<clang::FunctionDecl *>::iterator ie;
-  string p_name = type2cpp(clazz.name);
+set<pair<string, bool>> cpp_generator::getDependencies(isl_class &clazz)
+{
+	set<pair<string, bool>> Deps;
+	set<clang::FunctionDecl *>::iterator it;
+	set<clang::FunctionDecl *>::iterator ie;
+	string p_name = type2cpp(clazz.name);
 
-  if (can_be_printed(clazz))
-    insertDep(Deps, make_pair("Printer", false));
+	if (can_be_printed(clazz))
+		insertDep(Deps, make_pair("Printer", false));
 
-  for (it = clazz.constructors.begin(), ie = clazz.constructors.end(); it != ie;
-       ++it) {
-    clang::FunctionDecl *C = *it;
-    for (unsigned i = 0; i < C->getNumParams(); ++i) {
-      const ParmVarDecl *P = C->getParamDecl(i);
-      QualType Ty = P->getOriginalType();
-      insertIfDependency(p_name, Deps, Ty);
-    }
-  }
+	for (it = clazz.constructors.begin(), ie = clazz.constructors.end();
+	     it != ie; ++it) {
+		clang::FunctionDecl *C = *it;
+		for (unsigned i = 0; i < C->getNumParams(); ++i) {
+			const ParmVarDecl *P = C->getParamDecl(i);
+			QualType Ty = P->getOriginalType();
+			insertIfDependency(p_name, Deps, Ty);
+		}
+	}
 
-  for (it = clazz.methods.begin(), ie = clazz.methods.end(); it != ie; ++it) {
-    clang::FunctionDecl *M = *it;
-    for (unsigned i = 0; i < M->getNumParams(); ++i) {
-      const ParmVarDecl *P = M->getParamDecl(i);
-      QualType Ty = P->getOriginalType();
-      insertIfDependency(p_name, Deps, Ty);
-    }
+	for (it = clazz.methods.begin(), ie = clazz.methods.end(); it != ie;
+	     ++it) {
+		clang::FunctionDecl *M = *it;
+		for (unsigned i = 0; i < M->getNumParams(); ++i) {
+			const ParmVarDecl *P = M->getParamDecl(i);
+			QualType Ty = P->getOriginalType();
+			insertIfDependency(p_name, Deps, Ty);
+		}
 
-    clang::QualType retTy = M->getReturnType();
-    insertIfDependency(p_name, Deps, retTy);
-  }
+		clang::QualType retTy = M->getReturnType();
+		insertIfDependency(p_name, Deps, retTy);
+	}
 
-  string super;
-  bool subclass = is_subclass(clazz.type, super);
-  if (subclass) {
-    insertDep(Deps, make_pair(type2cpp(super), true));
-  } else {
-    insertDep(Deps, make_pair("IslBase", true));
-  }
+	string super;
+	bool subclass = is_subclass(clazz.type, super);
+	if (subclass) {
+		insertDep(Deps, make_pair(type2cpp(super), true));
+	} else {
+		insertDep(Deps, make_pair("IslBase", true));
+	}
 
-  // We need the isl::Format then
-  if (can_be_printed(clazz)) {
-    insertDep(Deps, make_pair("Format", true));
-  }
+	// We need the isl::Format then
+	if (can_be_printed(clazz)) {
+		insertDep(Deps, make_pair("Format", true));
+	}
 
-  insertDep(Deps, make_pair("IslException", true));
-  insertDep(Deps, make_pair("Context", true));
+	insertDep(Deps, make_pair("IslException", true));
+	insertDep(Deps, make_pair("Context", true));
 
-  return Deps;
+	return Deps;
 }
 
 /**
@@ -1811,46 +1915,48 @@ set<pair<string, bool>> cpp_generator::getDependencies(isl_class &clazz) {
  *
  * This class holds the context and the wrapped isl object.
  */
-void cpp_generator::print_isl_obj_class() {
-  const string p_name = "IslBase";
-  string fileName = includePath + p_name + ".h";
-  ostream &os = outputfile(fileName);
+void cpp_generator::print_isl_obj_class()
+{
+	const string p_name = "IslBase";
+	string fileName = includePath + p_name + ".h";
+	ostream &os = outputfile(fileName);
 
-  print(os, "#ifndef ISL_CXX_{0}_H\n"
-            "#define ISL_CXX_{0}_H\n"
-            "\n"
-            "#include \"isl/Context.h\"\n"
-            "#include <memory>\n"
-            "#include <vector>\n"
-            "#include <iostream>\n"
-            "\n"
-            "namespace isl {{\n"
-            "class {0} {{\n"
-            "protected:\n"
-            "  Context &Ctx;\n"
-            "  void * This;\n"
-            "\n"
-            "  {0}(Context &Ctx, void *That) : Ctx(Ctx), This(That) {{}}\n"
-            "public:\n"
-            "  Context &ctx() const {{ return Ctx; }}\n"
-            "}};\n"
-            "\n",
-        p_name);
+	print(os,
+	      "#ifndef ISL_CXX_{0}_H\n"
+	      "#define ISL_CXX_{0}_H\n"
+	      "\n"
+	      "#include \"isl/Context.h\"\n"
+	      "#include <memory>\n"
+	      "#include <vector>\n"
+	      "#include <iostream>\n"
+	      "\n"
+	      "namespace isl {{\n"
+	      "class {0} {{\n"
+	      "protected:\n"
+	      "  Context &Ctx;\n"
+	      "  void * This;\n"
+	      "\n"
+	      "  {0}(Context &Ctx, void *That) : Ctx(Ctx), This(That) {{}}\n"
+	      "public:\n"
+	      "  Context &ctx() const {{ return Ctx; }}\n"
+	      "}};\n"
+	      "\n",
+	      p_name);
 
-  printHandleError(os, 0);
+	printHandleError(os, 0);
 
-  // Generate an inplace map function template that can be applied on all
-  // member methods that do not require parameters:
-  os << endl;
-  print(os,
-        "template <class T, typename... Args>\n"
-        "void map_inplace(T (T::*fn)(Args& ...args) const, "
-        "std::vector<std::reference_wrapper<T>> &&objs, Args && ...args) {{\n"
-        "  for (T &obj : objs)\n"
-        "    obj = (obj.*fn)(std::forward<Args>(args)...);\n"
-        "}}\n"
-        "}} //namespace isl\n");
-  os << getGuardFooter("Context");
+	// Generate an inplace map function template that can be applied on all
+	// member methods that do not require parameters:
+	os << endl;
+	print(os, "template <class T, typename... Args>\n"
+		  "void map_inplace(T (T::*fn)(Args& ...args) const, "
+		  "std::vector<std::reference_wrapper<T>> &&objs, Args && "
+		  "...args) {{\n"
+		  "  for (T &obj : objs)\n"
+		  "    obj = (obj.*fn)(std::forward<Args>(args)...);\n"
+		  "}}\n"
+		  "}} //namespace isl\n");
+	os << getGuardFooter("Context");
 }
 
 /**
@@ -1858,50 +1964,52 @@ void cpp_generator::print_isl_obj_class() {
  *
  * @param enu
  */
-void cpp_generator::print_enum(const isl_enum &enu) {
-  const string e_name = type2cpp(enu.name);
-  string fileName = includePath + e_name + ".h";
-  ostream &os = outputfile(fileName);
+void cpp_generator::print_enum(const isl_enum &enu)
+{
+	const string e_name = type2cpp(enu.name);
+	string fileName = includePath + e_name + ".h";
+	ostream &os = outputfile(fileName);
 
-  os << getGuardHeader(e_name);
-  print(os, "namespace isl {{\n"
-            "enum {0} {{\n",
-        e_name);
+	os << getGuardHeader(e_name);
+	print(os, "namespace isl {{\n"
+		  "enum {0} {{\n",
+	      e_name);
 
-  for (auto EnumValue : enu.values) {
-    print(os, "  {0}{1} = {2},\n", name2initials(e_name),
-          enumval2cpp(EnumValue.first), EnumValue.second);
-  }
-  print(os, "}};\n"
-            "}} // namespace isl\n");
-  os << getGuardFooter(e_name);
+	for (auto EnumValue : enu.values) {
+		print(os, "  {0}{1} = {2},\n", name2initials(e_name),
+		      enumval2cpp(EnumValue.first), EnumValue.second);
+	}
+	print(os, "}};\n"
+		  "}} // namespace isl\n");
+	os << getGuardFooter(e_name);
 }
 
 /**
  * @brief Print an isl exception class
  */
-void cpp_generator::print_isl_exception_class() {
-  const string p_name = "IslException";
-  string fileName = includePath + p_name + ".h";
-  ostream &os = outputfile(fileName);
+void cpp_generator::print_isl_exception_class()
+{
+	const string p_name = "IslException";
+	string fileName = includePath + p_name + ".h";
+	ostream &os = outputfile(fileName);
 
-  os << getGuardHeader(p_name);
-  print(os, "#include <exception>\n"
-            "#include <string>\n"
-            "\n"
-            "namespace isl {{\n"
-            "class {0} : public std::exception {{\n"
-            "  std::string What;\n"
-            "\n"
-            "public:\n"
-            "  {0}(std::string What) : What(What) {{}}\n"
-            "  virtual const char *what() const throw() override {{\n"
-            "    return What.c_str();\n"
-            "  }}\n"
-            "}};\n"
-            "}} //namespace isl\n",
-        p_name);
-  os << getGuardFooter(p_name);
+	os << getGuardHeader(p_name);
+	print(os, "#include <exception>\n"
+		  "#include <string>\n"
+		  "\n"
+		  "namespace isl {{\n"
+		  "class {0} : public std::exception {{\n"
+		  "  std::string What;\n"
+		  "\n"
+		  "public:\n"
+		  "  {0}(std::string What) : What(What) {{}}\n"
+		  "  virtual const char *what() const throw() override {{\n"
+		  "    return What.c_str();\n"
+		  "  }}\n"
+		  "}};\n"
+		  "}} //namespace isl\n",
+	      p_name);
+	os << getGuardFooter(p_name);
 }
 
 /**
@@ -1915,70 +2023,73 @@ void cpp_generator::print_isl_exception_class() {
  * The fn_ptr_helper class we generate holds a static function ptr()
  * that can be used like any other function pointer.
  */
-void cpp_generator::print_function_ptr_helper() {
-  const string p_name = "IslFnPtr";
-  string fileName = includePath + p_name + ".h";
-  ostream &os = outputfile(fileName);
+void cpp_generator::print_function_ptr_helper()
+{
+	const string p_name = "IslFnPtr";
+	string fileName = includePath + p_name + ".h";
+	ostream &os = outputfile(fileName);
 
-  os << getGuardHeader("FN_PTR");
-  print(os,
-        "#include <unistd.h>\n"
-        "#include <thread>\n"
-        "#include <chrono>\n"
-        "#include <mutex>\n"
-        "#include <functional>\n"
-        "#include <iostream>\n"
-        "#include <cmath>\n"
-        "\n"
-        "template <const size_t _UniqueId, typename _Res, typename... "
-        "_ArgTypes>\n"
-        "struct fun_ptr_helper\n"
-        "{{\n"
-        "public:\n"
-        "  typedef std::function<_Res(_ArgTypes...)> function_type;\n"
-        "\n"
-        "  static void bind(function_type&& f)\n"
-        "  {{ instance().fn_.swap(f); }}\n"
-        "\n"
-        "  static void bind(const function_type& f)\n"
-        "  {{ instance().fn_=f; }}\n"
-        "\n"
-        "  static _Res invoke(_ArgTypes... args)\n"
-        "  {{ return instance().fn_(args...); }}\n"
-        "\n"
-        "  typedef decltype(&fun_ptr_helper::invoke) pointer_type;\n"
-        "  static pointer_type ptr()\n"
-        "  {{ return &invoke; }}\n"
-        "\n"
-        "private:\n"
-        "  static fun_ptr_helper& instance()\n"
-        "  {{\n"
-        "    static fun_ptr_helper inst_;\n"
-        "    return inst_;\n"
-        "  }}\n"
-        "\n"
-        "  fun_ptr_helper() {{}}\n"
-        "  function_type fn_;\n"
-        "}};\n"
-        "\n"
-        "template <const size_t _UniqueId, typename _Res, typename... "
-        "_ArgTypes>\n"
-        "typename fun_ptr_helper<_UniqueId, _Res, _ArgTypes...>::pointer_type\n"
-        "get_fn_ptr(const std::function<_Res(_ArgTypes...)>& f)\n"
-        "{{\n"
-        "  fun_ptr_helper<_UniqueId, _Res, _ArgTypes...>::bind(f);\n"
-        "  return fun_ptr_helper<_UniqueId, _Res, _ArgTypes...>::ptr();\n"
-        "}}\n");
-  os << getGuardFooter("FN_PTR");
+	os << getGuardHeader("FN_PTR");
+	print(os,
+	      "#include <unistd.h>\n"
+	      "#include <thread>\n"
+	      "#include <chrono>\n"
+	      "#include <mutex>\n"
+	      "#include <functional>\n"
+	      "#include <iostream>\n"
+	      "#include <cmath>\n"
+	      "\n"
+	      "template <const size_t _UniqueId, typename _Res, typename... "
+	      "_ArgTypes>\n"
+	      "struct fun_ptr_helper\n"
+	      "{{\n"
+	      "public:\n"
+	      "  typedef std::function<_Res(_ArgTypes...)> function_type;\n"
+	      "\n"
+	      "  static void bind(function_type&& f)\n"
+	      "  {{ instance().fn_.swap(f); }}\n"
+	      "\n"
+	      "  static void bind(const function_type& f)\n"
+	      "  {{ instance().fn_=f; }}\n"
+	      "\n"
+	      "  static _Res invoke(_ArgTypes... args)\n"
+	      "  {{ return instance().fn_(args...); }}\n"
+	      "\n"
+	      "  typedef decltype(&fun_ptr_helper::invoke) pointer_type;\n"
+	      "  static pointer_type ptr()\n"
+	      "  {{ return &invoke; }}\n"
+	      "\n"
+	      "private:\n"
+	      "  static fun_ptr_helper& instance()\n"
+	      "  {{\n"
+	      "    static fun_ptr_helper inst_;\n"
+	      "    return inst_;\n"
+	      "  }}\n"
+	      "\n"
+	      "  fun_ptr_helper() {{}}\n"
+	      "  function_type fn_;\n"
+	      "}};\n"
+	      "\n"
+	      "template <const size_t _UniqueId, typename _Res, typename... "
+	      "_ArgTypes>\n"
+	      "typename fun_ptr_helper<_UniqueId, _Res, "
+	      "_ArgTypes...>::pointer_type\n"
+	      "get_fn_ptr(const std::function<_Res(_ArgTypes...)>& f)\n"
+	      "{{\n"
+	      "  fun_ptr_helper<_UniqueId, _Res, _ArgTypes...>::bind(f);\n"
+	      "  return fun_ptr_helper<_UniqueId, _Res, _ArgTypes...>::ptr();\n"
+	      "}}\n");
+	os << getGuardFooter("FN_PTR");
 }
 
 /**
  * @brief Generate all enums.
  */
-void cpp_generator::generateEnums() {
-  map<string, isl_enum>::iterator ei;
-  for (ei = enums.begin(); ei != enums.end(); ++ei)
-    print_enum(ei->second);
+void cpp_generator::generateEnums()
+{
+	map<string, isl_enum>::iterator ei;
+	for (ei = enums.begin(); ei != enums.end(); ++ei)
+		print_enum(ei->second);
 }
 
 /**
@@ -1989,6 +2100,7 @@ void cpp_generator::generateEnums() {
  * @param enums
  */
 cpp_generator::cpp_generator(set<RecordDecl *> &types,
-                             set<FunctionDecl *> &functions,
-                             set<EnumDecl *> &enums)
-    : generator(types, functions, enums) {}
+	set<FunctionDecl *> &functions,
+	set<EnumDecl *> &enums) : generator(types, functions, enums)
+{
+}
