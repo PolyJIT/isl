@@ -1329,11 +1329,9 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
  * @param os
  * @param clazz
  * @param cons
- * @param asNamedConstructor
  */
 void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
-				      FunctionDecl *cons,
-				      bool asNamedConstructor)
+				      FunctionDecl *cons)
 {
 	const string fullname = cons->getName();
 	const string cname = methodname2cpp(clazz, fullname);
@@ -1341,7 +1339,7 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 	int ctxSrc = -1;
 	int num_params = cons->getNumParams();
 	int drop_ctx = first_arg_is_isl_ctx(cons);
-	const string obj = asNamedConstructor ? "That" : "This";
+	const string obj = "That";
 
 	print(os, "  /// @brief Constructor for {0}\n"
 		  "  ///\n",
@@ -1352,14 +1350,8 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 		print(os, "  /// @param {0}\n", param->getNameAsString());
 	}
 
-	if (asNamedConstructor) {
-		print(os, "  static {0} {1}({2});\n", jclass, cname,
-		      get_argument_decl_list(cons, drop_ctx));
-	} else {
-		print(os, "  /// {0}\n"
-			  "  explicit {1}({2});\n",
-		      fullname, jclass, get_argument_decl_list(cons, drop_ctx));
-	}
+        print(os, "  static {0} {1}({2});\n", jclass, cname,
+              get_argument_decl_list(cons, drop_ctx));
 }
 
 /**
@@ -1368,11 +1360,9 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
  * @param os
  * @param clazz
  * @param cons
- * @param asNamedConstructor
  */
 void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
-					   FunctionDecl *cons,
-					   bool asNamedConstructor)
+					   FunctionDecl *cons)
 {
 	const string fullname = cons->getName();
 	const string cname = methodname2cpp(clazz, fullname);
@@ -1409,44 +1399,23 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 			     fullname + " returned a NULL pointer.");
 
 	os << endl;
-	if (asNamedConstructor) {
-		print(os, "inline {0} {0}::{1}({2}) {{\n"
-			  "  Context &Ctx = {3};\n"
-			  "{4}"
-			  "  Ctx.lock();\n"
-			  "  {5} *That = {6}({7});\n"
-			  "{8}"
-			  "  Ctx.unlock();\n",
-		      jclass, cname, argument_decl_list, context_source,
-		      prepare_os.str(), clazz.name, fullname, argument_list,
-		      handle_error_os.str());
-		if (can_copy(clazz)) {
-			print(os, "  return {0}(Ctx, That);\n", jclass);
-		} else {
-			print(os,
-			      "  std::shared_ptr<ptr> _That(new ptr(That));\n"
-			      "  return {0}(Ctx, _That);\n",
-			      jclass);
-		}
+	print(os, "inline {0} {0}::{1}({2}) {{\n"
+		  "  Context &Ctx = {3};\n"
+		  "{4}"
+		  "  Ctx.lock();\n"
+		  "  {5} *That = {6}({7});\n"
+		  "{8}"
+		  "  Ctx.unlock();\n",
+	      jclass, cname, argument_decl_list, context_source,
+	      prepare_os.str(), clazz.name, fullname, argument_list,
+	      handle_error_os.str());
+	if (can_copy(clazz)) {
+		print(os, "  return {0}(Ctx, That);\n", jclass);
 	} else {
-		string base_class = (!subclass) ? "IslBase" : type2cpp(super);
-		print(os, "// {3}\n"
-			  "inline {0}::{0}({2}) : {4}({5}, (void *)NULL) {{\n"
-			  "{6}"
-			  "  Ctx.lock();\n"
-			  "  {7} *That = {3}({8});\n"
-			  "{9}"
-			  "  Ctx.unlock();\n",
-		      jclass, cname, argument_decl_list, fullname, base_class,
-		      context_source, prepare_os.str(), clazz.name,
-		      argument_list, handle_error_os.str());
-		if (can_copy(clazz)) {
-			print(os, "  This = That;\n");
-		} else {
-			print(
-			    os,
-			    "  This = std::shared_ptr<ptr>(new ptr(That));\n");
-		}
+		print(os,
+		      "  std::shared_ptr<ptr> _That(new ptr(That));\n"
+		      "  return {0}(Ctx, _That);\n",
+		      jclass);
 	}
 
 	print(os, "}}\n");
@@ -1638,16 +1607,7 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
 	     ++in) {
-		bool asNamed = constructorShouldBeNamed(clazz, *in);
-		// We always print a "named" constructor (i.e., a static
-		// function
-		// to construct an object).
-		os << endl;
-		print_constructor(os, clazz, *in, true);
-		// Some constructors are also made available as
-		// constructors of the class.
-		if (!asNamed)
-			print_constructor(os, clazz, *in, false);
+		print_constructor(os, clazz, *in);
 	}
 
 	p.print_api_unwrapper_h(os);
@@ -1720,15 +1680,7 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 
 	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
 	     ++in) {
-		bool asNamed = constructorShouldBeNamed(clazz, *in);
-		// We always print a "named" constructor (i.e., a static
-		// function
-		// to construct an object).
-		print_constructor_impl(os, clazz, *in, true);
-		// Some constructors are also made available as
-		// constructors of the class.
-		if (!asNamed)
-			print_constructor_impl(os, clazz, *in, false);
+		print_constructor_impl(os, clazz, *in);
 	}
 
 	// We do not free objects of classes that have in-place update
