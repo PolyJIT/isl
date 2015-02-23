@@ -111,6 +111,7 @@ protected:
 	 * (such as isl_band).
 	 */
 	bool is_inplace(const isl_class &clazz) const;
+	int find_context_source(FunctionDecl *method);
 };
 
 #endif

@@ -616,3 +616,19 @@ bool generator::can_be_printed(const isl_class &clazz) const
 bool generator::is_inplace(const isl_class &clazz) const {
 	return has_annotation(clazz.type, "isl_inplace");
 }
+
+/* Find us a context.
+ */
+int generator::find_context_source(FunctionDecl *method) {
+	int ctxSrc = -1;
+	int num_params = method->getNumParams();
+	for (int i = 0; i < num_params; ++i) {
+		ParmVarDecl *param = method->getParamDecl(i);
+		if (is_isl_class(param->getOriginalType()))
+			ctxSrc = i;
+		if (is_isl_ctx(param->getOriginalType()))
+			ctxSrc = i;
+	}
+	return ctxSrc;
+}
+
