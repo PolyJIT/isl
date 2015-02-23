@@ -1307,14 +1307,17 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 	const string fullname = cons->getName();
 	const string cname = methodname2cpp(clazz, fullname);
 	const string jclass = type2cpp(clazz.name);
-	int ctxSrc = -1;
 	int num_params = cons->getNumParams();
 	int drop_ctx = first_arg_is_isl_ctx(cons);
-	const string obj = "That";
+	int ctxSrc = find_context_source(cons);
 
 	print(os, "  /// @brief Constructor for {0}\n"
 		  "  ///\n",
 	      fullname);
+
+	ParmVarDecl *param;
+	if (!(ctxSrc > 0))
+		drop_ctx = 0;
 
 	for (int i = drop_ctx; i < num_params; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
@@ -1340,21 +1343,20 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	const string jclass = type2cpp(clazz.name);
 	string super;
 	bool subclass = is_subclass(clazz.type, super);
-	int ctxSrc = -1;
 	int num_params = cons->getNumParams();
 	int drop_ctx = first_arg_is_isl_ctx(cons);
+	int ctxSrc = find_context_source(cons);
 
-	// Find us a context.
-	for (int i = drop_ctx; i < num_params; ++i) {
-		ParmVarDecl *param = cons->getParamDecl(i);
-		if (is_isl_class(param->getOriginalType()))
-			ctxSrc = i;
-	}
+	if (!(ctxSrc > 0))
+		drop_ctx = 0;
 
-	string context_source =
-	    (ctxSrc >= 0) ? format("{}.ctx()", cons->getParamDecl(ctxSrc)
-						   ->getNameAsString())
-			  : "Context::get()";
+	string context_source;
+	ParmVarDecl *param = cons->getParamDecl(ctxSrc);
+
+	if (ctxSrc > 0)
+		context_source = format("{}.ctx()", param->getNameAsString());
+	else
+		context_source = param->getNameAsString();
 
 	ostringstream prepare_os;
 	for (int i = drop_ctx; i < num_params; ++i) {
