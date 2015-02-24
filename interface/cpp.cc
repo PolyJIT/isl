@@ -78,12 +78,11 @@ static const string getIncludeForIslObj(const string &islName)
  *
  * @return a string containing the include preamble for a .cpp or .h file
  */
-static const string getIncludes(set<pair<string, bool>> deps, bool impl = false)
+const string cpp_generator::getIncludes(isl_class &clazz,
+					bool impl = false)
 {
+	auto deps = getDependencies(clazz);
 	string includes;
-	set<pair<string, bool>>::iterator i;
-	set<pair<string, bool>>::iterator ie;
-
 	for (auto DepPair : deps) {
 		if (DepPair.second)
 			includes +=
@@ -91,6 +90,10 @@ static const string getIncludes(set<pair<string, bool>> deps, bool impl = false)
 		else if (impl)
 			includes +=
 			    format("#include \"isl/{0}.hpp\"\n", DepPair.first);
+	}
+
+	if (clazz.is_ctx()) {
+		includes += "#include <mutex>\n";
 	}
 
 	includes += "#include <string>\n";
@@ -281,12 +284,13 @@ static void printHandleError(ostream &os, int level)
 	      indent(level));
 }
 
-static void printHandleErrorCall(ostream &os, int level, string &&what)
+static void printHandleErrorCall(ostream &os, int level, string &&what,
+				 string context = "ctx")
 {
-	print(os, "{0}if (Ctx.hasError()) {{\n"
+	print(os, "{0}if ({2}.hasError()) {{\n"
 		  "{0}  handleError(\"{1}\");\n"
 		  "{0}}}\n",
-	      indent(level), what);
+	      indent(level), what, context);
 }
 
 /**
@@ -350,7 +354,7 @@ static void print_ptr_wrapper(ostream &os, string name)
  */
 class cpp_class_printer
 {
-      private:
+      protected:
 	const isl_class &clazz;
 	const bool subclass;
 	const bool can_copy;
@@ -359,6 +363,35 @@ class cpp_class_printer
 	const string base_class;
 	string name;
 	string p_name;
+
+	void print_explicit_copyable_subclass(ostream &os)
+	{
+		print(os, "  explicit {0}(Ctx ctx, {1} *That) : "
+			  "{2}(ctx, (void *)That) {{/* empty */}}\n"
+			  "  explicit {0}(Ctx ctx, void *That) : "
+			  "{2}(ctx, (void *)That) {{/* empty */}}\n",
+		      p_name, name, base_class);
+	}
+	void print_explicit_copyable(ostream &os) {
+		print(os, "  void * This;\n");
+		print(os, "  Ctx ctx;\n");
+
+		print(os, "  explicit {0}(Ctx ctx, {1} *That) : "
+		      "ctx(ctx), This((void *)That) {{}}\n",
+		      p_name, name);
+		print(os, "  explicit {0}(Ctx ctx, void *That) : "
+		      "ctx(ctx), This(That) {{}}\n",
+		      p_name);
+	}
+	void print_explicit_non_copyable(ostream &os) {
+		print(os, "  std::shared_ptr<ptr> This;\n");
+		print(os, "  Ctx ctx;\n");
+
+		print(os, "  explicit {}(Ctx ctx, "
+			  "std::shared_ptr<ptr> That) : "
+			  "ctx(ctx), This(That) {{}}\n",
+		      p_name);
+	}
 
       public:
 	/**
@@ -385,20 +418,17 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_explicit_constructors_h(ostream &os)
+	virtual void print_explicit_constructors_h(ostream &os)
 	{
-		if (can_copy) {
-			print(os, "  explicit {0}(Context &Ctx, {1} *That) : "
-				  "{2}(Ctx, (void *)That) {{/* empty */}}\n"
-				  "  explicit {0}(Context &Ctx, void *That) : "
-				  "{2}(Ctx, (void *)That) {{/* empty */}}\n",
-			      p_name, name, base_class);
+		if (!subclass && can_copy) {
+			print_explicit_copyable(os);
+		} else if (!subclass) {
+			print_explicit_non_copyable(os);
+		} else if (subclass && can_copy) {
+			print_explicit_copyable_subclass(os);
 		} else {
-			print(os, "  explicit {}(Context &Ctx, "
-				  "std::shared_ptr<ptr> That)\n"
-				  "    : {}(Ctx, nullptr), This(That) {{/* "
-				  "empty */}}\n",
-			      p_name, base_class);
+			print(cerr, "not implemented!\n");
+			assert(0);
 		}
 	}
 
@@ -407,13 +437,18 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_copy_constructor_h(ostream &os)
+	virtual void print_copy_constructor_h(ostream &os)
 	{
-		print(os,
-		      "  {0}(const {0} &Other) : {1}(Other.ctx(), {2}) {{}}\n",
-		      p_name, base_class,
-		      (can_copy) ? "Other.GetCopy()"
-				 : "nullptr), This(Other.GetCopy()");
+		if (subclass)
+			print(os,
+			      "  {0}(const {0} &Other) : {1}(Other.Context(), "
+			      "Other.GetCopy()) {{}}\n",
+			      p_name, base_class);
+		else
+			print(os,
+			      "  {0}(const {0} &Other) : {0}(Other.Context(), "
+			      "Other.GetCopy()) {{}}\n",
+			      p_name, base_class);
 	}
 
 	/**
@@ -421,7 +456,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_copy_assignment(ostream &os)
+	virtual void print_copy_assignment(ostream &os)
 	{
 		if (!can_copy)
 			return;
@@ -440,7 +475,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_copy_assignment_h(ostream &os)
+	virtual void print_copy_assignment_h(ostream &os)
 	{
 		if (!can_copy)
 			print(os,
@@ -456,18 +491,16 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_move_constructor_h(ostream &os)
+	virtual void print_move_constructor_h(ostream &os)
 	{
-		if (can_copy)
-			print(os, "  {0} ({0} && Other) : {1}(Other.ctx(), "
-				  "Other.Give()) {{}}\n",
+		if (subclass)
+			print(os, "  {0} ({0} && Other) : {1}(Other.Context(), "
+				  "Other.This) {{}}\n",
 			      p_name, base_class);
 		else
-			print(
-			    os,
-			    "  {0} ({0} && Other) : {1}(Other.ctx(), nullptr), "
-			    "This(std::move(Other.This)) {{}}\n",
-			    p_name, base_class);
+			print(os, "  {0} ({0} && Other) : {0}(Other.Context(), "
+				  "Other.This) {{}}\n",
+			      p_name, base_class);
 	}
 
 	/**
@@ -475,7 +508,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_move_assignment_h(ostream &os)
+	virtual void print_move_assignment_h(ostream &os)
 	{
 		print(os, "  {0} &operator=({0} && Other) {{\n", p_name);
 		if (can_copy)
@@ -494,7 +527,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_api_wrapper(ostream &os)
+	virtual void print_api_wrapper(ostream &os)
 	{
 		if (can_copy) {
 			print(os, "inline {0} *{1}::GetCopy() const {{\n"
@@ -515,7 +548,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_api_wrapper_h(ostream &os)
+	virtual void print_api_wrapper_h(ostream &os)
 	{
 		// 1. Wrap an isl_* object.
 		print(os,
@@ -525,8 +558,10 @@ class cpp_class_printer
 		      "  /// We take ownership of the isl object.\n"
 		      "  ///\n"
 		      "  ///@param That the {0} we want to wrap.\n"
-		      "  explicit {1}({0} *That) : "
-		      "{1}(Context::get({0}_get_ctx(That)), ",
+		      "  explicit {1}({0} *That) : ", name, p_name);
+
+		print(os,
+		      "{1}(Ctx({0}_get_ctx(That)), ",
 		      name, p_name);
 
 		if (can_copy) {
@@ -549,7 +584,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_api_unwrapper(ostream &os)
+	virtual void print_api_unwrapper(ostream &os)
 	{
 		print(os, "/// @brief Unwrap the stored isl object.\n"
 			  "/// @return A the wrapped isl object.\n"
@@ -566,7 +601,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_api_unwrapper_h(ostream &os)
+	virtual void print_api_unwrapper_h(ostream &os)
 	{
 		print(os, "  /// @brief unwrap the stored isl object.\n"
 			  "  /// @return a the wrapped isl object.\n"
@@ -581,7 +616,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_api_give(ostream &os)
+	virtual void print_api_give(ostream &os)
 	{
 		print(os,
 		      "/// @brief Release ownership of the wrapped object.\n"
@@ -615,7 +650,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_api_give_h(ostream &os)
+	virtual void print_api_give_h(ostream &os)
 	{
 		print(os,
 		      "  /// @brief Release ownership of the wrapped object.\n"
@@ -634,7 +669,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_destructor(ostream &os)
+	virtual void print_destructor(ostream &os)
 	{
 		if (!can_copy)
 			return;
@@ -650,7 +685,7 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_destructor_h(ostream &os)
+	virtual void print_destructor_h(ostream &os)
 	{
 		if (can_copy && !is_inplace)
 			print(os, "  virtual ~{0}();\n", p_name);
@@ -663,11 +698,11 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_print_methods(ostream &os)
+	virtual void print_print_methods(ostream &os)
 	{
 		print(os,
 		      "inline std::string {0}::toStr(isl::Format F) const {{\n"
-		      "  Printer p = Printer::toStr();\n"
+		      "  Printer p = Printer::toStr(ctx);\n"
 		      "  p = p.setOutputFormat(F);\n"
 		      "  p = p.print{0}(*this);\n"
 		      "  return p.getStr();\n"
@@ -680,11 +715,102 @@ class cpp_class_printer
 	 *
 	 * @param os
 	 */
-	void print_print_methods_h(ostream &os)
+	virtual void print_print_methods_h(ostream &os)
 	{
 		print(os, "  std::string toStr(isl::Format F = "
 			  "isl::Format::FIsl) const;\n");
 	}
+
+	/**
+	 * Print additional methods required for this class.
+	 */
+	virtual void print_extra_methods_h(ostream &os) {}
+	virtual void print_extra_methods(ostream &os) {}
+};
+
+class context_class_printer : public cpp_class_printer
+{
+      public:
+	/**
+	 * @brief Create a Class printer
+	 *
+	 * @param clazz the isl_class to print
+	 * @param subclass true, if we are a subclass of another isl_class.
+	 * @param can_copy true, if we can create copies of ourself.
+	 * @param super our superclass.
+	 */
+	explicit context_class_printer(const isl_class &clazz, bool subclass,
+				       bool can_copy, const string &super,
+				       bool is_inplace)
+	    : cpp_class_printer(clazz, subclass, can_copy, super, is_inplace)
+	{
+	}
+
+	/**
+	 * @brief Print the declaration of the API wrapper
+	 *
+	 * @param os
+	 */
+	void print_api_wrapper_h(ostream &os) override
+	{
+		// 1. Wrap an isl_* object.
+		print(os,
+		      "  ///@brief Wrap an existing isl object.\n"
+		      "  ///\n"
+		      "  /// This serves as an entry point into the C++ API.\n"
+		      "  /// We take ownership of the isl object.\n"
+		      "  ///\n"
+		      "  ///@param That the {0} we want to wrap.\n"
+		      "  explicit {1}({0} *That) : ", name, p_name);
+
+		print(os, "This(std::make_shared<isl::{0}::ptr>(That)) "
+			  "{{}}\n", p_name);
+
+	}
+
+	void print_explicit_constructors_h(ostream &os) override
+	{
+		print(os, "  std::shared_ptr<ptr> This;\n"
+			  "  explicit {}(std::shared_ptr<ptr> That) : "
+			  "This(That) {{}}\n",
+		      p_name);
+	}
+
+	void print_extra_methods_h(ostream &os) override {
+		print(os,
+		     	  "private:\n"
+		  	  "  mutable std::recursive_mutex M;\n"
+		  	  "public:\n"
+		      	  "  void lock() const {{\n"
+			  "    M.lock();\n"
+			  "  }}\n"
+			  "\n"
+			  "  void unlock() const {{\n"
+			  "    M.unlock();\n"
+			  "  }}\n"
+			  "\n"
+			  "  bool hasError() const {{\n"
+			  "    isl_ctx *ctx = Get();\n"
+			  "    enum isl_error err = isl_ctx_last_error(ctx);\n"
+			  "    int goe = isl_options_get_on_error(ctx);\n"
+			  "    return (err != isl_error_none) && goe != "
+			  "ISL_ON_ERROR_CONTINUE;\n"
+			  "  }}\n");
+	}
+
+	void print_copy_constructor_h(ostream &os) override {
+		print(os, "  {0}(const {0} &Other) : {0}(Other.This) {{}}",
+		      p_name);
+	}
+	void print_copy_assignment(ostream &os) override {}
+	void print_copy_assignment_h(ostream &os) override {}
+	void print_move_constructor_h(ostream &os) override {}
+	void print_move_assignment_h(ostream &os) override {}
+	void print_api_wrapper(ostream &os) override {}
+	void print_destructor(ostream &os) override {}
+	void print_destructor_h(ostream &os) override {}
+	void print_print_methods(ostream &os) override {}
+	void print_print_methods_h(ostream &os) override {}
 };
 
 /**
@@ -706,7 +832,8 @@ class cpp_class_printer
  *
  * @return
  */
-string cpp_generator::paramtype2jna(QualType ty, bool wrapperTypes, bool isBool)
+string
+    cpp_generator::paramtype2jna(QualType ty, bool wrapperTypes, bool isBool)
 {
 	string type;
 	if (is_isl_ctx(ty))
@@ -941,6 +1068,8 @@ void cpp_generator::prepare_argument(ostream &os, const ParmVarDecl *param)
 	} else if (is_isl_result_argument(type)) {
 		QualType pType = type->getPointeeType();
 		print(os, "  {0} _{1} = nullptr;\n", pType.getAsString(), name);
+	} else if (is_isl_ctx(type)) {
+		print(os, "  {0}.lock();\n", name);
 	} else if (is_isl_class(type)) {
 		// Make sure the isl object is of the right type,
 		// i.e., it matches the compile time type of the
@@ -969,6 +1098,8 @@ void cpp_generator::print_argument(ostream &os, ParmVarDecl *param)
 		print(os, "({0}) ? &_{0} : nullptr", name);
 	} else if (is_isl_enum(type)) {
 		print(os, "({0}){1}", type.getAsString(), name);
+	} else if (is_isl_ctx(type)) {
+		print(os, "({0}.Get())", name);
 	} else if (is_isl_class(type)) {
 		os << isl_ptr(extract_type(type), "_cast_" + name,
 			      takes(param));
@@ -991,9 +1122,9 @@ void cpp_generator::print_argument(ostream &os, ParmVarDecl *param)
 void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
 	const ParmVarDecl *param)
 {
+	const string &name = param->getNameAsString();
 	QualType type = param->getOriginalType();
 	if (is_isl_result_argument(type)) {
-		const string &name = param->getNameAsString();
 		const string cppTyName = cppTypeName(type->getPointeeType());
 
 		print(os, "  if({0}) {{\n", name);
@@ -1002,6 +1133,8 @@ void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
 			  "    {1}->reset(new {0}(_tmp_{1}));\n"
 			  "  }}\n",
 		      cppTyName, name);
+	} else if (is_isl_ctx(type)) {
+		print(os, "  {0}.unlock();\n", name);
 	}
 }
 
@@ -1070,8 +1203,13 @@ string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset)
 	for (int i = offset; i < num_params; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		bool isIsl = is_isl_class(param->getOriginalType());
+		bool isCtx = is_isl_ctx(param->getOriginalType());
 		string prefix = (i > offset) ? ", " : "";
 
+		//if (isCtx)
+		//	print(os, "{0}{1} &{2}", prefix,
+		//	      paramtype2cpp(param), param->getNameAsString());
+		//else if (isIsl)
 		if (isIsl)
 			print(os, "{0}const {1} &{2}", prefix,
 			      paramtype2cpp(param), param->getNameAsString());
@@ -1095,9 +1233,7 @@ string cpp_generator::get_argument_list(FunctionDecl *method, int offset)
 	ostringstream os;
 	int num_params = method->getNumParams();
 
-	if (offset)
-		os << "Ctx.unwrap()";
-	for (int i = offset; i < num_params; ++i) {
+	for (int i = 0; i < num_params; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		if (i)
 			os << ", ";
@@ -1247,7 +1383,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 
 	os << endl;
 	print(os, "inline {0} {2}::{1}({3}) const {{\n"
-		  "  Ctx.lock();\n"
+		  "  ctx.lock();\n"
 		  "  {2} self = as{2}();\n"
 		  "  // Prepare arguments\n"
 		  "{4}"
@@ -1255,7 +1391,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 		  "  {5} res = {6}({7}{8});\n"
 		  "  // Handle result argument(s)\n"
 		  "{9}"
-		  "  Ctx.unlock();\n"
+		  "  ctx.unlock();\n"
 		  "  // Handle return\n"
 		  "{10}"
 		  "}}\n",
@@ -1269,14 +1405,14 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 		print(
 		    os, "/// @brief inplace variant\n"
 			"inline void {1}::{0}Inplace({2}) {{\n"
-			"  Ctx.lock();\n"
+			"  ctx.lock();\n"
 			"  // Prepare arguments\n"
 			"{3}"
 			"  // Call {5}\n"
 			"  This = (void *){5}(({4} *)This{7});\n"
 			"  // Handle result argument(s)\n"
 			"{8}"
-			"  Ctx.unlock();\n"
+			"  ctx.unlock();\n"
 			"{9}"
 			"}}\n",
 		    cname, p_name, get_argument_decl_list(method, 1),
@@ -1346,48 +1482,63 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	int num_params = cons->getNumParams();
 	int drop_ctx = first_arg_is_isl_ctx(cons);
 	int ctxSrc = find_context_source(cons);
+	bool is_ctx = clazz.is_ctx();
 
 	if (!(ctxSrc > 0))
 		drop_ctx = 0;
 
-	string context_source;
-	ParmVarDecl *param = cons->getParamDecl(ctxSrc);
-
-	if (ctxSrc > 0)
-		context_source = format("{}.ctx()", param->getNameAsString());
-	else
-		context_source = param->getNameAsString();
-
 	ostringstream prepare_os;
-	for (int i = drop_ctx; i < num_params; ++i) {
+	for (int i = 0; i < num_params; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
 		prepare_argument(prepare_os, param);
 	}
 
-	string argument_list = get_argument_list(cons, drop_ctx);
+	string argument_list = get_argument_list(cons);
 	string argument_decl_list = get_argument_decl_list(cons, drop_ctx);
 
 	ostringstream handle_error_os;
 	printHandleErrorCall(handle_error_os, 2,
-			     fullname + " returned a NULL pointer.");
+			     fullname + " returned a NULL pointer.", "_ctx");
+
+	// Handle result args
+	ostringstream result_os;
+	for (int i = 0; i < num_params; ++i) {
+		const ParmVarDecl *param = cons->getParamDecl(i);
+		handle_result_argument(result_os, "Ctx", param);
+	}
 
 	os << endl;
-	print(os, "inline {0} {0}::{1}({2}) {{\n"
-		  "  Context &Ctx = {3};\n"
-		  "{4}"
-		  "  Ctx.lock();\n"
-		  "  {5} *That = {6}({7});\n"
-		  "{8}"
-		  "  Ctx.unlock();\n",
-	      jclass, cname, argument_decl_list, context_source,
+	print(os, "inline {0} {0}::{1}({2}) {{\n", jclass, cname,
+	      argument_decl_list);
+	if (ctxSrc >= 0) {
+		const ParmVarDecl *param = cons->getParamDecl(ctxSrc);
+		std::string context =
+		    cons->getParamDecl(ctxSrc)->getNameAsString();
+		if (!is_isl_ctx(param->getOriginalType())) {
+			print(os, "  Ctx _ctx = {0}.Context();\n"
+				  "  _ctx.lock();\n",
+			      context);
+		} else {
+			print(os, "  Ctx _ctx = {0};\n"
+				  "  _ctx.lock();\n",
+			      context);
+		}
+	}
+	print(os, "{0}"
+		  "  {1} *That = {2}({3});\n"
+		  "{5}\n"
+		  "{4}\n",
 	      prepare_os.str(), clazz.name, fullname, argument_list,
-	      handle_error_os.str());
+	      handle_error_os.str(), result_os.str());
+	if (!clazz.is_ctx()) {
+		print(os, "  _ctx.unlock();\n");
+	}
 	if (can_copy(clazz)) {
-		print(os, "  return {0}(Ctx, That);\n", jclass);
+		print(os, "  return {0}(_ctx, That);\n", jclass);
 	} else {
 		print(os,
 		      "  std::shared_ptr<ptr> _That(new ptr(That));\n"
-		      "  return {0}(Ctx, _That);\n",
+		      "  return {0}(_ctx, _That);\n",
 		      jclass);
 	}
 
@@ -1404,71 +1555,6 @@ void cpp_generator::generate()
 }
 
 /**
- * @brief Print a special class for the isl_ctx objects.
- *
- * We perform locking in here to restore thread safety.
- */
-void cpp_generator::print_isl_ctx_class()
-{
-	string fileName = includePath + "Context.h";
-	ostream &os = outputfile(fileName);
-
-	os << getGuardHeader("Context");
-	print(os, "#include \"isl/{0}.h\"\n"
-		  "\n"
-		  "#include <mutex>\n"
-		  "#include <isl/options.h>\n"
-		  "\n"
-		  "namespace isl{{\n"
-		  "class Context {{\n"
-		  "private:\n"
-		  "  isl_ctx *This;\n"
-		  "  std::recursive_mutex M;\n"
-		  "\n"
-		  "public:\n"
-		  "  static Context &get(isl_ctx *Other = NULL) {{\n"
-		  "    static Context instance(Other);\n"
-		  "    return instance;\n"
-		  "  }}\n"
-		  "\n"
-		  "  void lock() {{\n"
-		  "    M.lock();\n"
-		  "  }}\n"
-		  "\n"
-		  "  void unlock() {{\n"
-		  "    M.unlock();\n"
-		  "  }}\n"
-		  "\n"
-		  "  isl_ctx *unwrap() {{\n"
-		  "    return This;\n"
-		  "  }}\n"
-		  "\n"
-		  "  bool hasError() {{\n"
-		  "    enum isl_error err = isl_ctx_last_error(This);\n"
-		  "    int goe = isl_options_get_on_error(This);\n"
-		  "    return (err != isl_error_none) && goe != "
-		  "ISL_ON_ERROR_CONTINUE;\n"
-		  "  }}\n"
-		  "\n"
-		  "private:\n"
-		  "  Context(isl_ctx *Other = NULL) {{\n"
-		  "    if (This)\n"
-		  "      return;\n"
-		  "    if (Other)\n"
-		  "      This = Other;\n"
-		  "    else\n"
-		  "      This = isl_ctx_alloc();\n"
-		  "  }} // Invisible.\n"
-		  "\n"
-		  "  Context(Context const &); // Do not implement\n"
-		  "  void operator=(Context const &); // Do not implement\n"
-		  "}};\n"
-		  "}} //namespace isl\n",
-	      getIncludeForIslObj("isl_ctx"));
-	os << getGuardFooter("Context");
-}
-
-/**
  * @brief A list of non-copyable objects that are not declare uncopyable in isl.
  *
  * TODO: Fix this in isl, maybe?
@@ -1476,7 +1562,7 @@ void cpp_generator::print_isl_ctx_class()
  * As we implement the isl_copy stuff via unwrap, we want to make sure to be
  * able to unwrap. So far only isl_schedule and isl_printer fail us.
  */
-static set<string> NonCopyable = {"isl_schedule", "isl_printer"};
+static set<string> NonCopyable = {"isl_ctx", "isl_schedule", "isl_printer"};
 /**
  * @brief Return true, if the class name is in the NonCopyable set.
  *
@@ -1513,7 +1599,15 @@ void cpp_generator::print_class(isl_class &clazz)
 	string super;
 	bool subclass = is_subclass(clazz.type, super);
 	bool can_cp = can_copy(clazz);
-	cpp_class_printer p(clazz, subclass, can_cp, super, is_inplace(clazz));
+	std::unique_ptr<cpp_class_printer> p;
+	if (clazz.is_ctx())
+		p = std::unique_ptr<context_class_printer>(
+		    new context_class_printer(clazz, subclass, can_cp, super,
+					      is_inplace(clazz)));
+	else
+		p = std::unique_ptr<cpp_class_printer>(
+		    new cpp_class_printer(clazz, subclass, can_cp, super,
+					  is_inplace(clazz)));
 
 	const string &name = clazz.name;
 	string p_name = type2cpp(name);
@@ -1533,34 +1627,35 @@ void cpp_generator::print_class(isl_class &clazz)
 		      getIncludeForIslObj(extra));
 	}
 
-	os << getIncludes(getDependencies(clazz)) << endl;
-	print(os, "#include \"isl/IslFnPtr.h\"\n");
-
-	os << endl;
-
-	string base_class = (subclass) ? type2cpp(super) : "IslBase";
-
+	os << getIncludes(clazz) << endl;
+	print(os, "#include \"isl/IslFnPtr.h\"\n"
+		  "\n");
 	print(os, "namespace isl {{\n"
 		  "{0}"
-		  "\n"
-		  "class {1} : public {2} {{\n"
-		  "protected:\n",
-	      getForwardDecls(Deps), p_name, base_class);
-
-	if (!can_cp) {
-		print_ptr_wrapper(os, name);
-		os << endl;
-		print(os, "  std::shared_ptr<ptr> This;\n"
-			  "\n");
+		  "\n", getForwardDecls(Deps));
+	if (subclass) {
+		string base_class = type2cpp(super);
+		print(os, "class {0} : public {1} {{\n", p_name, base_class);
+	} else {
+		print(os, "class {0} {{\n", p_name);
 	}
+	print(os, "protected:\n");
 
-	p.print_explicit_constructors_h(os);
+	if (!can_cp)
+		print_ptr_wrapper(os, name);
+
+	p->print_explicit_constructors_h(os);
 
 	print(os, "\n"
 		  "public:\n");
-	p.print_api_wrapper_h(os);
-	p.print_api_give_h(os);
-	p.print_api_unwrapper_h(os);
+
+	if (!clazz.is_ctx() && !subclass) {
+		print(os, "  const Ctx &Context() const {{ return ctx; }}\n");
+	}
+
+	p->print_api_wrapper_h(os);
+	p->print_api_give_h(os);
+	p->print_api_unwrapper_h(os);
 
 	os << endl;
 
@@ -1572,10 +1667,11 @@ void cpp_generator::print_class(isl_class &clazz)
 	// We do not free objects of classes that have in-place update
 	// (e.g., isl_band). These values exist only in dependence of
 	// parent objects and are freed when the parent object goes away.
-	p.print_destructor_h(os);
+	p->print_destructor_h(os);
+	p->print_extra_methods_h(os);
 
 	if (can_be_printed(clazz)) {
-		p.print_print_methods_h(os);
+		p->print_print_methods_h(os);
 	}
 
 	// Print conversion functions for every super class.
@@ -1594,16 +1690,10 @@ void cpp_generator::print_class(isl_class &clazz)
 	for (auto method : clazz.methods)
 		print_method(os, clazz, method, subclass, super);
 
-	print(os, "\n"
-		  "}};\n"
-		  "}} // namespace isl\n");
-	// if (name.compare("isl_val") == 0)
-	//  print_additional_val_methods(os);
-
-	p.print_copy_constructor_h(os);
-	p.print_copy_assignment_h(os);
-	p.print_move_constructor_h(os);
-	p.print_move_assignment_h(os);
+	p->print_copy_constructor_h(os);
+	p->print_copy_assignment_h(os);
+	p->print_move_constructor_h(os);
+	p->print_move_assignment_h(os);
 
 	if (can_cp) {
 		print(
@@ -1615,6 +1705,11 @@ void cpp_generator::print_class(isl_class &clazz)
 		    p_name);
 		os << endl;
 	}
+
+	print(os, "}};\n"
+		  "}} // namespace isl\n");
+	// if (name.compare("isl_val") == 0)
+	//  print_additional_val_methods(os);
 
 	os << getGuardFooter(p_name);
 }
@@ -1632,7 +1727,15 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 	bool subclass = is_subclass(clazz.type, super);
 	bool can_cp = can_copy(clazz);
 
-	cpp_class_printer p(clazz, subclass, can_cp, super, is_inplace(clazz));
+	std::unique_ptr<cpp_class_printer> p;
+	if (clazz.is_ctx())
+		p = std::unique_ptr<context_class_printer>(
+		    new context_class_printer(clazz, subclass, can_cp, super,
+					      is_inplace(clazz)));
+	else
+		p = std::unique_ptr<cpp_class_printer>(
+		    new cpp_class_printer(clazz, subclass, can_cp, super,
+					  is_inplace(clazz)));
 
 	set<FunctionDecl *>::iterator in;
 	string fileName = includePath + p_name + ".hpp";
@@ -1646,10 +1749,10 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		  "#include <cassert>\n"
 		  "\n"
 		  "namespace isl {{\n",
-	      p_name, getIncludes(getDependencies(clazz), true));
+	      p_name, getIncludes(clazz, true));
 
-	p.print_api_wrapper(os);
-	p.print_copy_assignment(os);
+	p->print_api_wrapper(os);
+	p->print_copy_assignment(os);
 
 	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
 	     ++in) {
@@ -1660,14 +1763,15 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 	// (e.g., isl_band). These values exist only in dependence of
 	// parent objects and are freed when the parent object goes away.
 	if (!is_inplace(clazz)) {
-		p.print_destructor(os);
+		p->print_destructor(os);
 	}
 
-	p.print_api_give(os);
-	p.print_api_unwrapper(os);
+	p->print_extra_methods(os);
+	p->print_api_give(os);
+	p->print_api_unwrapper(os);
 
 	if (can_be_printed(clazz)) {
-		p.print_print_methods(os);
+		p->print_print_methods(os);
 	}
 
 	// Print conversion functions for every super class.
@@ -1712,15 +1816,12 @@ void cpp_generator::print_class_impl(isl_class &clazz)
  */
 void cpp_generator::generateClasses()
 {
-	print_isl_ctx_class();
 	print_isl_obj_class();
 	print_isl_exception_class();
 	print_function_ptr_helper();
 
 	map<string, isl_class>::iterator ci;
 	for (ci = classes.begin(); ci != classes.end(); ++ci) {
-		if (ci->second.is_ctx())
-			continue;
 		print_class(ci->second);
 		print_class_impl(ci->second);
 	}
@@ -1758,8 +1859,9 @@ void cpp_generator::insertIfDependency(string p_name,
 {
 	if (is_isl_class(Ty) || is_isl_enum(Ty)) {
 		string d_name = paramtype2cpp(Ty);
+		bool includeRequired = is_isl_enum(Ty) || is_isl_ctx(Ty);
 		if (d_name != p_name) {
-			insertDep(Deps, make_pair(d_name, is_isl_enum(Ty)));
+			insertDep(Deps, make_pair(d_name, includeRequired));
 		}
 	} else if (is_isl_result_argument(Ty)) {
 		QualType pTy = Ty->getPointeeType();
@@ -1820,11 +1922,11 @@ set<pair<string, bool>> cpp_generator::getDependencies(isl_class &clazz)
 
 	string super;
 	bool subclass = is_subclass(clazz.type, super);
-	if (subclass) {
+	if (subclass)
 		insertDep(Deps, make_pair(type2cpp(super), true));
-	} else {
+	else
 		insertDep(Deps, make_pair("IslBase", true));
-	}
+
 
 	// We need the isl::Format then
 	if (can_be_printed(clazz)) {
@@ -1832,7 +1934,6 @@ set<pair<string, bool>> cpp_generator::getDependencies(isl_class &clazz)
 	}
 
 	insertDep(Deps, make_pair("IslException", true));
-	insertDep(Deps, make_pair("Context", true));
 
 	return Deps;
 }
@@ -1851,23 +1952,12 @@ void cpp_generator::print_isl_obj_class()
 	print(os,
 	      "#ifndef ISL_CXX_{0}_H\n"
 	      "#define ISL_CXX_{0}_H\n"
+	      "#include \"isl/IslException.h\"\n"
 	      "\n"
-	      "#include \"isl/Context.h\"\n"
 	      "#include <memory>\n"
 	      "#include <vector>\n"
-	      "#include <iostream>\n"
 	      "\n"
-	      "namespace isl {{\n"
-	      "class {0} {{\n"
-	      "protected:\n"
-	      "  Context &Ctx;\n"
-	      "  void * This;\n"
-	      "\n"
-	      "  {0}(Context &Ctx, void *That) : Ctx(Ctx), This(That) {{}}\n"
-	      "public:\n"
-	      "  Context &ctx() const {{ return Ctx; }}\n"
-	      "}};\n"
-	      "\n",
+	      "namespace isl {{\n",
 	      p_name);
 
 	printHandleError(os, 0);
