@@ -18,9 +18,11 @@ private:
   void generateEnums();
   void generateMakefile();
   void generateConfigure();
+
   set<pair<string, bool> > getDependencies(isl_class &clazz);
+  const string getIncludes(isl_class &clazz, bool impl);
+
   void print_isl_obj_class();
-  void print_isl_ctx_class();
   void print_isl_exception_class();
   void print_function_ptr_helper();
 
