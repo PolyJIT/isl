@@ -37,6 +37,7 @@ static IslDepMap IslExtraDeps = {
 	{"isl_constraint_list", {"isl_constraint"}},
 	{"isl_id_list", {"isl_id"}},
 	{"isl_val_list", {"isl_val"}},
+	{"isl_ctx", {"isl_options"}},
 };
 
 /**
@@ -373,8 +374,8 @@ class cpp_class_printer
 		      p_name, name, base_class);
 	}
 	void print_explicit_copyable(ostream &os) {
-		print(os, "  void * This;\n");
 		print(os, "  Ctx ctx;\n");
+		print(os, "  void * This;\n");
 
 		print(os, "  explicit {0}(Ctx ctx, {1} *That) : "
 		      "ctx(ctx), This((void *)That) {{}}\n",
@@ -384,8 +385,8 @@ class cpp_class_printer
 		      p_name);
 	}
 	void print_explicit_non_copyable(ostream &os) {
-		print(os, "  std::shared_ptr<ptr> This;\n");
 		print(os, "  Ctx ctx;\n");
+		print(os, "  std::shared_ptr<ptr> This;\n");
 
 		print(os, "  explicit {}(Ctx ctx, "
 			  "std::shared_ptr<ptr> That) : "
@@ -726,6 +727,12 @@ class cpp_class_printer
 	 */
 	virtual void print_extra_methods_h(ostream &os) {}
 	virtual void print_extra_methods(ostream &os) {}
+
+	virtual void print_constructor_h(ostream &os) {
+	}
+
+	virtual void print_constructor(ostream &os) {
+	}
 };
 
 class context_class_printer : public cpp_class_printer
@@ -807,8 +814,8 @@ class context_class_printer : public cpp_class_printer
 	void print_move_constructor_h(ostream &os) override {}
 	void print_move_assignment_h(ostream &os) override {}
 	void print_api_wrapper(ostream &os) override {}
-	void print_destructor(ostream &os) override {}
-	void print_destructor_h(ostream &os) override {}
+	//void print_destructor(ostream &os) override {}
+	//void print_destructor_h(ostream &os) override {}
 	void print_print_methods(ostream &os) override {}
 	void print_print_methods_h(ostream &os) override {}
 };
@@ -1350,6 +1357,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 	string retName = rettype2cpp(method);
 	string retNameC = method->getReturnType().getAsString();
 	int num_params = method->getNumParams();
+	string context = (clazz.is_ctx()) ? "(*this)" : "ctx";
 
 	// Prepare arguments
 	ostringstream prepare_os;
@@ -1375,7 +1383,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 
 	ostringstream handle_error_os;
 	printHandleErrorCall(handle_error_os, 2,
-			     fullname + " returned a NULL pointer.");
+			     fullname + " returned a NULL pointer.", context);
 
 	// Handle return
 	ostringstream return_os;
@@ -1383,7 +1391,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 
 	os << endl;
 	print(os, "inline {0} {2}::{1}({3}) const {{\n"
-		  "  ctx.lock();\n"
+		  "  {11}.lock();\n"
 		  "  {2} self = as{2}();\n"
 		  "  // Prepare arguments\n"
 		  "{4}"
@@ -1391,34 +1399,35 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 		  "  {5} res = {6}({7}{8});\n"
 		  "  // Handle result argument(s)\n"
 		  "{9}"
-		  "  ctx.unlock();\n"
+		  "  {11}.unlock();\n"
 		  "  // Handle return\n"
 		  "{10}"
 		  "}}\n",
 	      retName, cname, p_name, get_argument_decl_list(method, 1),
 	      prepare_os.str(), retNameC, fullname,
 	      isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-	      param_os.str(), result_os.str(), return_os.str());
+	      param_os.str(), result_os.str(), return_os.str(), context);
 
 	if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
 		os << endl;
 		print(
 		    os, "/// @brief inplace variant\n"
 			"inline void {1}::{0}Inplace({2}) {{\n"
-			"  ctx.lock();\n"
+			"  {10}.lock();\n"
 			"  // Prepare arguments\n"
 			"{3}"
 			"  // Call {5}\n"
 			"  This = (void *){5}(({4} *)This{7});\n"
 			"  // Handle result argument(s)\n"
 			"{8}"
-			"  ctx.unlock();\n"
+			"  {10}.unlock();\n"
 			"{9}"
 			"}}\n",
 		    cname, p_name, get_argument_decl_list(method, 1),
 		    prepare_os.str(), clazz.name, fullname,
 		    isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-		    param_os.str(), result_os.str(), handle_error_os.str());
+		    param_os.str(), result_os.str(), handle_error_os.str(),
+		    context);
 	}
 }
 
@@ -1483,6 +1492,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	int drop_ctx = first_arg_is_isl_ctx(cons);
 	int ctxSrc = find_context_source(cons);
 	bool is_ctx = clazz.is_ctx();
+	string context = (is_ctx) ? "That" : "_ctx";
 
 	if (!(ctxSrc > 0))
 		drop_ctx = 0;
@@ -1498,7 +1508,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 
 	ostringstream handle_error_os;
 	printHandleErrorCall(handle_error_os, 2,
-			     fullname + " returned a NULL pointer.", "_ctx");
+			     fullname + " returned a NULL pointer.", context);
 
 	// Handle result args
 	ostringstream result_os;
@@ -1538,8 +1548,8 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	} else {
 		print(os,
 		      "  std::shared_ptr<ptr> _That(new ptr(That));\n"
-		      "  return {0}(_ctx, _That);\n",
-		      jclass);
+		      "  return {0}({1}, _That);\n",
+		      jclass, context);
 	}
 
 	print(os, "}}\n");
@@ -1956,6 +1966,7 @@ void cpp_generator::print_isl_obj_class()
 	      "\n"
 	      "#include <memory>\n"
 	      "#include <vector>\n"
+	      "#include <iostream>\n"
 	      "\n"
 	      "namespace isl {{\n",
 	      p_name);
