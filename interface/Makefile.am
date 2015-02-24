@@ -90,7 +90,8 @@ ISL_CXX_H=\
 	isl/Constraint.hpp \
 	isl/ConstraintList.h \
 	isl/ConstraintList.hpp \
-	isl/Context.h \
+	isl/Ctx.h \
+	isl/Ctx.hpp \
 	isl/DimType.h \
 	isl/Fold.h \
 	isl/Format.h \
