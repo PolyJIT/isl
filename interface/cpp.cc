@@ -1460,7 +1460,6 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 		  "  ///\n",
 	      fullname);
 
-	ParmVarDecl *param;
 	if (!(ctxSrc > 0))
 		drop_ctx = 0;
 
