@@ -67,9 +67,6 @@ private:
                  bool is_takes);
 
   string cppTypeName(QualType ty);
-
-  bool constructorShouldBeNamed(const isl_class &clazz,
-                                const FunctionDecl *cons);
 };
 
 #endif // CPP_H

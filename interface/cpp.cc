@@ -1029,38 +1029,6 @@ string cpp_generator::cppTypeName(QualType ty)
 }
 
 /**
- * @brief Check, if we need to create a named constructor or not.
- *
- * A constructor need not be named when
- * - the name is "read_from_str", or
- * - the name is "from_" followed by a class name (e.g.
- * "isl_set_from_basic_set"
- *   to construct an isl_set from an isl_basic_set).
- *
- * @param clazz
- * @param cons
- *
- * @return
- */
-bool cpp_generator::constructorShouldBeNamed(const isl_class &clazz,
-	const FunctionDecl *cons)
-{
-	const string fullname = cons->getName();
-	const string mname = clazz.name_without_class(fullname);
-	// A constructor need not be named when
-	// - the name is "read_from_str", or
-	// - the name is "from_" followed by a class name (e.g.
-	// "isl_set_from_basic_set"
-	//   to construct an isl_set from an isl_basic_set).
-	bool unnamed =
-	    mname == "read_from_str" ||
-	    (mname.find("from_") == 0 &&
-	     classes.find("isl_" + mname.substr(5)) != classes.end());
-
-	return !unnamed;
-}
-
-/**
  * @brief Prepare a function argument before it is used.
  *
  * @param os
