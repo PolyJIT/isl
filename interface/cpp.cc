@@ -1524,11 +1524,11 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	if (!IslExtraDeps.count(name))
 		print(os, "#include \"isl/{}.h\"\n", getIncludeForIslObj(name));
-
-	vector<string> extras = IslExtraDeps[name];
-	for (string extra : extras) {
-		print(os, "#include \"isl/{}.h\"\n",
-		      getIncludeForIslObj(extra));
+	else {
+		vector<string> extras = IslExtraDeps[name];
+		for (string extra : extras) {
+			print(os, "#include \"isl/{}.h\"\n", getIncludeForIslObj(extra));
+		}
 	}
 
 	os << getIncludes(clazz) << endl;
