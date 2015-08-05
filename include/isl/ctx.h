@@ -87,15 +87,20 @@ enum isl_error {
 	isl_error_quota,
 	isl_error_unsupported
 };
-typedef enum {
+
+enum __isl_export isl_stat {
 	isl_stat_error = -1,
-	isl_stat_ok = 0
-} isl_stat;
-typedef enum {
+	isl_stat_ok = 0,
+};
+typedef enum isl_stat isl_stat;
+
+enum __isl_export isl_bool {
 	isl_bool_error = -1,
 	isl_bool_false = 0,
 	isl_bool_true = 1
-} isl_bool;
+};
+typedef enum isl_bool isl_bool;
+
 struct __isl_export isl_ctx;
 typedef struct isl_ctx isl_ctx;
 
