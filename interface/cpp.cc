@@ -835,23 +835,6 @@ string cpp_generator::paramtype2cpp(const ParmVarDecl *decl)
 }
 
 /**
- * @brief Convert a return type to a jna compatible name
- *
- * This is copied from the java bindings, with minor adjustments to c++
- *
- * Get the return type of the Java function representing a given isl
- * function in the JNA interface.
- *
- * @param method
- *
- * @return
- */
-string cpp_generator::rettype2jna(const FunctionDecl *method)
-{
-	return paramtype2jna(method->getReturnType());
-}
-
-/**
  * @brief Convert a param type to a cpp compatible name.
  *
  * This is copied from the java bindings, with minor adjustments to c++
