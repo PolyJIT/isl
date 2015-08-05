@@ -821,68 +821,6 @@ class context_class_printer : public cpp_class_printer
 };
 
 /**
- * @brief Convert the paramType to JNA compatible names.
- *
- * This is copied from the java bindings, with minor adjustments to cpp code
- * generation.
-
- * Get the parameter type of an argument of type "ty" of a Java function
- * representing a given isl function in the JNA interface.
- * When isBool is true, then a pointer to int argument is assumed to
- * denote a boolean output parameter.
- * When wrapperTypes is true, a wrapper class (e.g. "Integer") is returned
- * instead of the underlying primitive type (e.g. "int").
- *
- * @param ty
- * @param wrapperTypes
- * @param isBool
- *
- * @return
- */
-string
-    cpp_generator::paramtype2jna(QualType ty, bool wrapperTypes, bool isBool)
-{
-	string type;
-	if (is_isl_ctx(ty))
-		type = "Context &";
-	else if (is_isl_result_argument(ty)) {
-		type = cppTypeName(ty->getPointeeType()) + ".Ptr[]";
-	} else if (is_isl_class(ty)) {
-		type = type2cpp(extract_type(ty)) + ".Ptr";
-	} else if (is_isl_enum(ty)) {
-		type = "int";
-	} else if (is_string(ty))
-		type = "std::string";
-	else if (ty->isFunctionPointerType())
-		type = "Callback";
-	else if (ty->isPointerType()) {
-		if (ty->getPointeeType().getAsString().compare("int") == 0)
-			type = isBool ? "bool[]" : "int[]";
-		type = ty.getAsString();
-	} else if (ty->isVoidType())
-		type = "void";
-	else {
-		type = ty.getAsString();
-	}
-
-	return type;
-}
-
-/**
- * @brief Convert a parameter type to a jna compatible name.
- *
- * Copied from cpp bindings.
- *
- * @param decl
- *
- * @return
- */
-string cpp_generator::paramtype2jna(const ParmVarDecl *decl)
-{
-	return paramtype2jna(decl->getOriginalType(), false, is_bool(decl));
-}
-
-/**
  * @brief Convert a parameter type to a cpp compatible name
  *
  * Copied from cpp bindings.
@@ -957,7 +895,7 @@ string cpp_generator::paramtype2cpp(QualType type, bool wrapperTypes,
 		}
 	}
 
-	return paramtype2jna(type, wrapperTypes, isBool);
+	return type.getAsString();
 }
 
 /**
