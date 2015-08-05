@@ -418,9 +418,8 @@ class cpp_class_printer
 	explicit cpp_class_printer(const isl_class &clazz, bool subclass,
 		bool can_copy, const string &super, bool is_inplace) :
 			clazz(clazz), subclass(subclass), can_copy(can_copy),
-			super(super),
-			base_class((!subclass) ? "IslBase" : type2cpp(super)),
-			is_inplace(is_inplace)
+			is_inplace(is_inplace), super(super),
+			base_class((!subclass) ? "IslBase" : type2cpp(super))
 	{
 		name = clazz.name;
 		p_name = type2cpp(name);
