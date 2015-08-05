@@ -72,7 +72,7 @@ private:
   void generateMakefile();
   void generateConfigure();
 
-  set<pair<string, bool> > getDependencies(isl_class &clazz);
+  Dependences getDependences(isl_class &clazz);
   const string getIncludes(isl_class &clazz, bool impl);
 
   void print_isl_obj_class();
@@ -82,8 +82,7 @@ private:
   bool can_copy(isl_class &clazz);
 
   void insertIfDependency(QualType &argTy);
-  void insertIfDependency(string p_name, set<pair<string, bool> > &Deps,
-                          QualType &Ty);
+  void insertIfDependency(isl_class &clazz, Dependences &Deps, QualType && Ty);
 
   void prepare_argument(ostream &os, const ParmVarDecl *param);
   void print_argument(ostream &os, ParmVarDecl *param);

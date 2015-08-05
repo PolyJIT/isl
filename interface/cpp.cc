@@ -67,6 +67,18 @@ static const string getIncludeForIslObj(const string &islName)
 	return lName;
 }
 
+static set<HeaderInfo> complement(const set<HeaderInfo> &LHS,
+		                          const set<HeaderInfo> &RHS) {
+	set<HeaderInfo> Res;
+	for (auto Elem : LHS) {
+		if (!RHS.count(Elem)) {
+			Res.insert(Elem);
+		}
+	}
+
+	return Res;
+}
+
 /**
  * @brief Get the includes for a given set of dependencies.
  *
@@ -79,18 +91,23 @@ static const string getIncludeForIslObj(const string &islName)
  *
  * @return a string containing the include preamble for a .cpp or .h file
  */
-const string cpp_generator::getIncludes(isl_class &clazz,
-					bool impl = false)
+const string cpp_generator::getIncludes(isl_class &clazz, bool impl = false)
 {
-	auto deps = getDependencies(clazz);
+	auto deps = getDependences(clazz);
 	string includes;
-	for (auto DepPair : deps) {
-		if (DepPair.second)
-			includes +=
-			    format("#include \"isl/{0}.h\"\n", DepPair.first);
-		else if (impl)
-			includes +=
-			    format("#include \"isl/{0}.hpp\"\n", DepPair.first);
+
+	if (impl) {
+		for (auto Dep : deps.Forwards) {
+			includes += format("#include \"{0}\"\n", Dep.getAsImplString());
+		}
+
+		for (auto Dep : deps.Includes) {
+			includes += format("#include \"{0}\"\n", Dep.getAsImplString());
+		}
+	} else {
+		for (auto Dep : deps.Includes) {
+			includes += format("#include \"{0}\"\n", Dep.getAsDeclString());
+		}
 	}
 
 	if (clazz.is_ctx()) {
@@ -114,16 +131,11 @@ const string cpp_generator::getIncludes(isl_class &clazz,
  *
  * @return a string containing the forward declarations for a .cpp or .h file
  */
-static const string getForwardDecls(set<pair<string, bool>> deps)
+static const string getForwardDecls(Dependences &Deps)
 {
 	string forwards;
-	set<pair<string, bool>>::iterator i;
-	set<pair<string, bool>>::iterator ie;
-
-	for (i = deps.begin(), ie = deps.end(); i != ie; ++i) {
-		const pair<string, bool> dep = *i;
-		if (!dep.second)
-			forwards += "class " + dep.first + ";\n";
+	for (auto Dep : complement(Deps.Forwards, Deps.Includes)) {
+		forwards += "class " + Dep.getAsString() + ";\n";
 	}
 
 	return forwards;
@@ -1512,7 +1524,7 @@ void cpp_generator::print_class(isl_class &clazz)
 	set<FunctionDecl *>::iterator in;
 	string fileName = includePath + p_name + ".h";
 	ostream &os = outputfile(fileName);
-	set<pair<string, bool>> Deps = getDependencies(clazz);
+	Dependences Deps = getDependences(clazz);
 
 	os << getGuardHeader(p_name) << endl;
 
@@ -1752,29 +1764,54 @@ static void insertDep(set<pair<string, bool>> &Deps, pair<string, bool> Dep)
  * @param Deps
  * @param Ty
  */
-void cpp_generator::insertIfDependency(string p_name,
-	set<pair<string, bool>> &Deps, QualType &Ty)
+void cpp_generator::insertIfDependency(isl_class &clazz,
+	Dependences &Deps, QualType && Ty)
 {
-	if (is_isl_class(Ty) || is_isl_enum(Ty)) {
-		string d_name = paramtype2cpp(Ty);
-		bool includeRequired = is_isl_enum(Ty) || is_isl_ctx(Ty);
-		if (d_name != p_name) {
-			insertDep(Deps, make_pair(d_name, includeRequired));
-		}
-	} else if (is_isl_result_argument(Ty)) {
+	string p_name = type2cpp(clazz.name);
+	bool isEnum = is_isl_enum(Ty);
+	bool isCtx = is_isl_ctx(Ty);
+
+	auto is_self = [&] (const string &name) {
+		return p_name == name;
+	};
+
+	auto is_isl_class_or_enum = [&] (QualType &T) {
+		return is_isl_class(T) || is_isl_enum(T);
+	};
+
+	auto collect_callback_deps = [&] (Dependences &Deps, QualType Ty) {
 		QualType pTy = Ty->getPointeeType();
-		insertIfDependency(p_name, Deps, pTy);
-	} else if (Ty->isPointerType()) {
-		QualType pTy = Ty->getPointeeType();
-		if (pTy->isFunctionType()) {
-			const FunctionProtoType *ft =
-			    pTy->getAs<FunctionProtoType>();
-			unsigned nArgs = ft->getNumArgs();
-			for (unsigned i = 0; i < nArgs; ++i) {
-				QualType argTy = ft->getArgType(i);
-				insertIfDependency(p_name, Deps, argTy);
+		const FunctionProtoType *ft = pTy->getAs<FunctionProtoType>();
+		unsigned nArgs = ft->getNumArgs();
+		for (unsigned i = 0; i < nArgs; ++i) {
+			QualType argTy = ft->getArgType(i);
+			string d_name = paramtype2cpp(argTy);
+			if (is_isl_class_or_enum(argTy) && !is_self(d_name)) {
+				string c_name = argTy->getPointeeType().getAsString();
+
+				if (!IslExtraDeps.count(c_name)) {
+					string inc = getIncludeForIslObj(c_name);
+					Deps.insertInclude(HeaderInfo(inc, false));
+				} else {
+					for (string extra : IslExtraDeps[c_name]) {
+						string inc = getIncludeForIslObj(extra);
+						Deps.insertInclude(HeaderInfo(inc, false));
+					}
+				}
 			}
 		}
+	};
+
+	if (is_isl_result_argument(Ty))
+		insertIfDependency(clazz, Deps, Ty->getPointeeType());
+
+	if (is_isl_class_or_enum(Ty)) {
+		string d_name = paramtype2cpp(Ty);
+		if (!is_self(d_name)) {
+			Deps.insert(HeaderInfo(d_name, !isEnum), isEnum || isCtx);
+		}
+	} else if (is_callback(Ty)) {
+		collect_callback_deps(Deps, Ty);
 	}
 }
 
@@ -1785,53 +1822,44 @@ void cpp_generator::insertIfDependency(string p_name,
  *
  * @return
  */
-set<pair<string, bool>> cpp_generator::getDependencies(isl_class &clazz)
+Dependences cpp_generator::getDependences(isl_class &clazz)
 {
-	set<pair<string, bool>> Deps;
-	set<clang::FunctionDecl *>::iterator it;
-	set<clang::FunctionDecl *>::iterator ie;
 	string p_name = type2cpp(clazz.name);
+	Dependences Deps;
+	set<clang::FunctionDecl *>::iterator it, ie;
 
 	if (can_be_printed(clazz))
-		insertDep(Deps, make_pair("Printer", false));
+		Deps.insertForward("Printer");
+
+	auto ScanFunctionArgs = [&] (const clang::FunctionDecl *F) {
+		for (unsigned i = 0; i < F->getNumParams(); ++i) {
+			const ParmVarDecl *P = F->getParamDecl(i);
+			insertIfDependency(clazz, Deps, P->getOriginalType());
+		}
+	};
 
 	for (it = clazz.constructors.begin(), ie = clazz.constructors.end();
 	     it != ie; ++it) {
-		clang::FunctionDecl *C = *it;
-		for (unsigned i = 0; i < C->getNumParams(); ++i) {
-			const ParmVarDecl *P = C->getParamDecl(i);
-			QualType Ty = P->getOriginalType();
-			insertIfDependency(p_name, Deps, Ty);
-		}
+		ScanFunctionArgs(*it);
 	}
 
 	for (it = clazz.methods.begin(), ie = clazz.methods.end(); it != ie;
 	     ++it) {
 		clang::FunctionDecl *M = *it;
-		for (unsigned i = 0; i < M->getNumParams(); ++i) {
-			const ParmVarDecl *P = M->getParamDecl(i);
-			QualType Ty = P->getOriginalType();
-			insertIfDependency(p_name, Deps, Ty);
-		}
+		ScanFunctionArgs(M);
 
-		clang::QualType retTy = M->getReturnType();
-		insertIfDependency(p_name, Deps, retTy);
+		insertIfDependency(clazz, Deps, M->getReturnType());
 	}
 
 	string super;
-	bool subclass = is_subclass(clazz.type, super);
-	if (subclass)
-		insertDep(Deps, make_pair(type2cpp(super), true));
+	if (is_subclass(clazz.type, super))
+		Deps.insertInclude(HeaderInfo(type2cpp(super), true, false));
 	else
-		insertDep(Deps, make_pair("IslBase", true));
+		Deps.insertInclude(HeaderInfo("IslBase", false));
 
-
-	// We need the isl::Format then
-	if (can_be_printed(clazz)) {
-		insertDep(Deps, make_pair("Format", true));
-	}
-
-	insertDep(Deps, make_pair("IslException", true));
+	if (can_be_printed(clazz))
+		Deps.insertInclude(HeaderInfo("Format", false));
+	Deps.insertInclude(HeaderInfo("IslException", false));
 
 	return Deps;
 }
