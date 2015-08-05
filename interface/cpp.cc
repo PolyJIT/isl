@@ -1738,26 +1738,6 @@ void cpp_generator::generateClasses()
 }
 
 /**
- * @brief Insert a dependency for inclusion/forward declaration.
- *
- * The function takes a set of dependencies to insert into and a
- * dependency pair. The first component is the class/file(w/o file-extension)
- * name we insert as dependency. The second component is true, if we
- * want to fullfil the dependency via a direct include and false, if
- * a forward decl is sufficient.
- *
- * @param Deps The set of dependencies we insert into.
- * @param Dep The dependency pair we want to include.
- */
-static void insertDep(set<pair<string, bool>> &Deps, pair<string, bool> Dep)
-{
-	pair<string, bool> complement = make_pair(Dep.first, !Dep.second);
-	if (Deps.count(complement))
-		Deps.erase(complement);
-	Deps.insert(Dep);
-}
-
-/**
  * @brief Update the dependency set, if necessary.
  *
  * @param p_name
