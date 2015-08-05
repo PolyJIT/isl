@@ -1207,16 +1207,16 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 	      method->getNameAsString(), comment.str(), CxxRetType, CxxMethod,
 	      get_argument_decl_list(method, 1));
 
-	if (is_isl_class(method->getReturnType())) {
-		os << endl;
-		print(os, "  ///@brief Generated from:\n"
-			  "  ///       {0}\n"
-			  "{1}"
-			  "  ///\n"
-			  "  void {2}Inplace({3});\n",
-		      method->getNameAsString(), comment.str(), cname,
-		      get_argument_decl_list(method, 1));
-	}
+	// if (is_isl_class(method->getReturnType())) {
+	// 	os << endl;
+	// 	print(os, "  ///@brief Generated from:\n"
+	// 		  "  ///       {0}\n"
+	// 		  "{1}"
+	// 		  "  ///\n"
+	// 		  "  void {2}Inplace({3});\n",
+	// 	      method->getNameAsString(), comment.str(), cname,
+	// 	      get_argument_decl_list(method, 1));
+	// }
 }
 
 /**
@@ -1307,27 +1307,27 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 	      isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
 	      param_os.str(), result_os.str(), return_os.str(), Context);
 
-	if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
-		os << endl;
-		print(
-		    os, "/// @brief inplace variant\n"
-			"inline void {1}::{0}Inplace({2}) {{\n"
-			"  {10}.lock();\n"
-			"  // Prepare arguments\n"
-			"{3}"
-			"  // Call {5}\n"
-			"  This = (void *){5}(({4} *)This{7});\n"
-			"  // Handle result argument(s)\n"
-			"{8}"
-			"  {10}.unlock();\n"
-			"{9}"
-			"}}\n",
-		    cname, p_name, get_argument_decl_list(method, 1),
-		    prepare_os.str(), clazz.name, fullname,
-		    isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-		    param_os.str(), result_os.str(), handle_error_os.str(),
-		    context);
-	}
+	// if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
+	// 	os << endl;
+	// 	print(
+	// 	    os, "/// @brief inplace variant\n"
+	// 		"inline void {1}::{0}Inplace({2}) {{\n"
+	// 		"  {10}.lock();\n"
+	// 		"  // Prepare arguments\n"
+	// 		"{3}"
+	// 		"  // Call {5}\n"
+	// 		"  This = (void *){5}(({4} *)This{7});\n"
+	// 		"  // Handle result argument(s)\n"
+	// 		"{8}"
+	// 		"  {10}.unlock();\n"
+	// 		"{9}"
+	// 		"}}\n",
+	// 	    cname, p_name, get_argument_decl_list(method, 1),
+	// 	    prepare_os.str(), clazz.name, fullname,
+	// 	    isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
+	// 	    param_os.str(), result_os.str(), handle_error_os.str(),
+	// 	    context);
+	// }
 }
 
 /**
