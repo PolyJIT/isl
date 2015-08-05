@@ -869,6 +869,14 @@ string cpp_generator::paramtype2cpp(QualType type, bool wrapperTypes,
 	} else if (is_isl_result_argument(type)) {
 		return format("std::unique_ptr<{0}> *",
 			      cppTypeName(type->getPointeeType()));
+	} else if (is_isl_ctx(type)) {
+		return "Context &";
+	} else if (is_isl_enum(type)) {
+	 	return "int";
+	} else if (is_string(type)) {
+		return "std::string";
+	} else if (type->isVoidType()) {
+		return "void";
 	} else if (type->isPointerType()) {
 		QualType ptype = type->getPointeeType();
 		if (ptype->isFunctionType()) {
