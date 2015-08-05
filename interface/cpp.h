@@ -3,6 +3,59 @@
 
 #include "generator.h"
 
+class HeaderInfo {
+public:
+	HeaderInfo(const char *Dep, bool hasImpl = true, bool implRequired = false)
+		: Dep(Dep), hasImpl(hasImpl), implRequired(implRequired) {}
+	HeaderInfo(const string &Dep, bool hasImpl = true, bool implRequired = false)
+		: Dep(Dep), hasImpl(hasImpl), implRequired(implRequired) {}
+
+	string getAsImplString() const {
+		return (hasImpl || implRequired) ? "isl/" + getAsString() + ".hpp"
+			                             : getAsDeclString();
+	}
+
+	string getAsDeclString() const {
+		if (implRequired)
+			return getAsImplString();
+		return "isl/" + getAsString() + ".h";
+	}
+
+	string getAsString() const {
+		return Dep;
+	}
+
+	bool operator<(const HeaderInfo &RHS) const {
+		return Dep < RHS.getAsString();
+	}
+private:
+	string Dep;
+	bool hasImpl;
+	bool implRequired;
+};
+
+struct Dependences {
+	using DependencesIt = set<HeaderInfo>::iterator;
+	set<HeaderInfo> Includes;
+	set<HeaderInfo> Forwards;
+
+	void insertForward(HeaderInfo Dep) {
+		Forwards.insert(Dep);
+	}
+
+	void insertInclude(HeaderInfo Dep) {
+		Forwards.erase(Dep);
+		Includes.insert(Dep);
+	}
+
+	void insert(HeaderInfo Dep, bool IncludeRequired = true) {
+		if (IncludeRequired)
+			insertInclude(Dep);
+		else
+			insertForward(Dep);
+	}
+};
+
 class cpp_generator : public generator {
 public:
   cpp_generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
