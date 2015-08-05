@@ -971,14 +971,10 @@ void cpp_generator::prepare_argument(ostream &os, const ParmVarDecl *param)
 {
 	QualType type = param->getOriginalType();
 	const string &name = param->getNameAsString();
-	if (is_unsigned(type)) {
-		print(os, "  assert({0} >= 0);\n", name);
-	} else if (is_isl_result_argument(type)) {
+	if (is_isl_result_argument(type)) {
 		QualType pType = type->getPointeeType();
 		print(os, "  {0} _{1} = nullptr;\n", pType.getAsString(), name);
-	} else if (is_isl_ctx(type)) {
-		print(os, "  {0}.lock();\n", name);
-	} else if (is_isl_class(type)) {
+	} else if (is_isl_class(type) && !is_isl_ctx(type)) {
 		// Make sure the isl object is of the right type,
 		// i.e., it matches the compile time type of the
 		// parameter (an actual argument for, e.g., isl_union_set
@@ -1111,7 +1107,7 @@ string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset)
 	for (int i = offset; i < num_params; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		bool isIsl = is_isl_class(param->getOriginalType());
-		bool isCtx = is_isl_ctx(param->getOriginalType());
+		//bool isCtx = is_isl_ctx(param->getOriginalType());
 		string prefix = (i > offset) ? ", " : "";
 
 		//if (isCtx)
@@ -1181,24 +1177,24 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 				 FunctionDecl *method, bool subclass,
 				 string super)
 {
-	string fullname = method->getName();
-	string cname = methodname2cpp(clazz, fullname);
-	string retName = rettype2cpp(method);
-	int num_params = method->getNumParams();
+	string IslMethod = method->getName();
+	string CxxMethod = methodname2cpp(clazz, IslMethod);
+	string CxxRetType = rettype2cpp(method);
+	int NumParams = method->getNumParams();
 
 	// Create a comment block for our parameters.
 	ostringstream comment;
-	for (int i = 1; i < num_params; ++i) {
-		ParmVarDecl *param = method->getParamDecl(i);
-		string p_name = param->getNameAsString();
-		bool is_give = is_isl_result_argument(param->getOriginalType());
+	for (int i = 1; i < NumParams; ++i) {
+		ParmVarDecl *Param = method->getParamDecl(i);
+		string ParamName = Param->getNameAsString();
+		bool Gives = is_isl_result_argument(Param->getOriginalType());
 
-		if (is_give)
+		if (Gives)
 			print(comment,
 			      "  ///@param {0} output parameter (isl_give)\n",
-			      p_name);
+			      ParamName);
 		else
-			print(comment, "  ///@param {0}\n", p_name);
+			print(comment, "  ///@param {0}\n", ParamName);
 	}
 
 	os << endl;
@@ -1208,7 +1204,7 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 		  "  ///\n"
 		  "  ///@return A new {2}\n"
 		  "  {2} {3}({4}) const;\n",
-	      method->getNameAsString(), comment.str(), retName, cname,
+	      method->getNameAsString(), comment.str(), CxxRetType, CxxMethod,
 	      get_argument_decl_list(method, 1));
 
 	if (is_isl_class(method->getReturnType())) {
@@ -1249,27 +1245,27 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
  * @param super
  */
 void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
-				      FunctionDecl *method, bool subclass,
-				      string super)
+				      FunctionDecl *method, bool,
+				      string)
 {
-	string p_name = type2cpp(clazz.name);
-	string fullname = method->getName();
-	string cname = methodname2cpp(clazz, fullname);
-	string retName = rettype2cpp(method);
-	string retNameC = method->getReturnType().getAsString();
-	int num_params = method->getNumParams();
-	string context = (clazz.is_ctx()) ? "(*this)" : "ctx";
+	string IslMethod = method->getName();
+	string IslRetType = method->getReturnType().getAsString();
+	string CxxClass = type2cpp(clazz.name);
+	string CxxMethod = methodname2cpp(clazz, IslMethod);
+	string CxxRetType = rettype2cpp(method);
+	int NumParams = method->getNumParams();
+	string Context = (clazz.is_ctx()) ? "(*this)" : "ctx";
 
 	// Prepare arguments
 	ostringstream prepare_os;
-	for (int i = 1; i < num_params; ++i) {
+	for (int i = 1; i < NumParams; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		prepare_argument(prepare_os, param);
 	}
 
 	// Create argument list
 	ostringstream param_os;
-	for (int i = 1; i < num_params; ++i) {
+	for (int i = 1; i < NumParams; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		param_os << ", ";
 		print_argument(param_os, param);
@@ -1277,14 +1273,15 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 
 	// Handle result args
 	ostringstream result_os;
-	for (int i = 1; i < num_params; ++i) {
+	for (int i = 1; i < NumParams; ++i) {
 		const ParmVarDecl *param = method->getParamDecl(i);
 		handle_result_argument(result_os, "Ctx", param);
 	}
 
 	ostringstream handle_error_os;
 	printHandleErrorCall(handle_error_os, 2,
-			     fullname + " returned a NULL pointer.", context);
+			     IslMethod + " returned a NULL pointer.",
+			     Context);
 
 	// Handle return
 	ostringstream return_os;
@@ -1304,10 +1301,11 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 		  "  // Handle return\n"
 		  "{10}"
 		  "}}\n",
-	      retName, cname, p_name, get_argument_decl_list(method, 1),
-	      prepare_os.str(), retNameC, fullname,
+	      CxxRetType, CxxMethod, CxxClass,
+	      get_argument_decl_list(method, 1), prepare_os.str(), IslRetType,
+	      IslMethod,
 	      isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-	      param_os.str(), result_os.str(), return_os.str(), context);
+	      param_os.str(), result_os.str(), return_os.str(), Context);
 
 	if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
 		os << endl;
@@ -1350,27 +1348,27 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 				      FunctionDecl *cons)
 {
-	const string fullname = cons->getName();
-	const string cname = methodname2cpp(clazz, fullname);
-	const string jclass = type2cpp(clazz.name);
-	int num_params = cons->getNumParams();
-	int drop_ctx = first_arg_is_isl_ctx(cons);
-	int ctxSrc = find_context_source(cons);
+	const string IslMethod = cons->getName();
+	const string CxxMethod = methodname2cpp(clazz, IslMethod);
+	const string CxxClass = type2cpp(clazz.name);
+	int NumParams = cons->getNumParams();
+	int DropContext = first_arg_is_isl_ctx(cons);
+	int ContextSource = find_context_source(cons);
 
 	print(os, "  /// @brief Constructor for {0}\n"
 		  "  ///\n",
-	      fullname);
+	      IslMethod);
 
-	if (!(ctxSrc > 0))
-		drop_ctx = 0;
+	if (!(ContextSource > 0))
+		DropContext = 0;
 
-	for (int i = drop_ctx; i < num_params; ++i) {
+	for (int i = DropContext; i < NumParams; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
 		print(os, "  /// @param {0}\n", param->getNameAsString());
 	}
 
-        print(os, "  static {0} {1}({2});\n", jclass, cname,
-              get_argument_decl_list(cons, drop_ctx));
+        print(os, "  static {0} {1}({2});\n", CxxClass, CxxMethod,
+              get_argument_decl_list(cons, DropContext));
 }
 
 /**
@@ -1383,73 +1381,69 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 					   FunctionDecl *cons)
 {
-	const string fullname = cons->getName();
-	const string cname = methodname2cpp(clazz, fullname);
-	const string jclass = type2cpp(clazz.name);
-	string super;
-	bool subclass = is_subclass(clazz.type, super);
-	int num_params = cons->getNumParams();
-	int drop_ctx = first_arg_is_isl_ctx(cons);
-	int ctxSrc = find_context_source(cons);
-	bool is_ctx = clazz.is_ctx();
-	string context = (is_ctx) ? "That" : "_ctx";
-
-	if (!(ctxSrc > 0))
-		drop_ctx = 0;
+	const string IslMethod = cons->getName();
+	const string CxxMethod = methodname2cpp(clazz, IslMethod);
+	const string CxxClass = type2cpp(clazz.name);
+	int NumParams = cons->getNumParams();
+	int ContextSource = find_context_source(cons);
+	int DropContext = first_arg_is_isl_ctx(cons) && !(ContextSource == 0);
+	bool IsContext = clazz.is_ctx();
+	string Context = (IsContext) ? "That" : "_ctx";
 
 	ostringstream prepare_os;
-	for (int i = 0; i < num_params; ++i) {
+	for (int i = 0; i < NumParams; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
 		prepare_argument(prepare_os, param);
 	}
 
-	string argument_list = get_argument_list(cons);
-	string argument_decl_list = get_argument_decl_list(cons, drop_ctx);
+	string ArgumentList = get_argument_list(cons);
+	string ArgumentDeclList = get_argument_decl_list(cons, DropContext);
 
 	ostringstream handle_error_os;
 	printHandleErrorCall(handle_error_os, 2,
-			     fullname + " returned a NULL pointer.", context);
+			     IslMethod + " returned a NULL pointer.", Context);
 
-	// Handle result args
 	ostringstream result_os;
-	for (int i = 0; i < num_params; ++i) {
+	for (int i = 0; i < NumParams; ++i) {
 		const ParmVarDecl *param = cons->getParamDecl(i);
 		handle_result_argument(result_os, "Ctx", param);
 	}
 
 	os << endl;
-	print(os, "inline {0} {0}::{1}({2}) {{\n", jclass, cname,
-	      argument_decl_list);
-	if (ctxSrc >= 0) {
-		const ParmVarDecl *param = cons->getParamDecl(ctxSrc);
-		std::string context =
-		    cons->getParamDecl(ctxSrc)->getNameAsString();
+	print(os, "inline {0} {0}::{1}({2}) {{\n", CxxClass, CxxMethod,
+	      ArgumentDeclList);
+	if (ContextSource >= 0) {
+		const ParmVarDecl *param = cons->getParamDecl(ContextSource);
+		std::string Context =
+		    cons->getParamDecl(ContextSource)->getNameAsString();
 		if (!is_isl_ctx(param->getOriginalType())) {
 			print(os, "  Ctx _ctx = {0}.Context();\n"
 				  "  _ctx.lock();\n",
-			      context);
+			      Context);
 		} else {
 			print(os, "  Ctx _ctx = {0};\n"
-				  "  _ctx.lock();\n",
-			      context);
+				  "  _ctx.lock();\n", Context);
 		}
 	}
-	print(os, "{0}"
-		  "  {1} *That = {2}({3});\n"
-		  "{5}\n"
-		  "{4}\n",
-	      prepare_os.str(), clazz.name, fullname, argument_list,
-	      handle_error_os.str(), result_os.str());
-	if (!clazz.is_ctx()) {
-		print(os, "  _ctx.unlock();\n");
-	}
-	if (can_copy(clazz)) {
-		print(os, "  return {0}(_ctx, That);\n", jclass);
-	} else {
+
+	if(clazz.is_ctx()) {
 		print(os,
-		      "  std::shared_ptr<ptr> _That(new ptr(That));\n"
-		      "  return {0}({1}, _That);\n",
-		      jclass, context);
+		      "  return {0}({1}({2}));\n",
+		  	  CxxClass, IslMethod, ArgumentList);
+	} else {
+		print(os, "{0}"
+		  	  "  {1} *That = {2}({3});\n"
+		  	  "{5}\n"
+		  	  "{4}\n",
+		  	  prepare_os.str(), clazz.name, IslMethod, ArgumentList,
+		  	  handle_error_os.str(), result_os.str());
+		if (can_copy(clazz)) {
+			print(os, "  return {0}(_ctx, That);\n", CxxClass);
+		} else {
+			print(os,
+				"  std::shared_ptr<ptr> _That(new ptr(That));\n"
+				"  return {0}({1}, _That);\n", CxxClass, Context);
+		}
 	}
 
 	print(os, "}}\n");
@@ -1538,11 +1532,9 @@ void cpp_generator::print_class(isl_class &clazz)
 	}
 
 	os << getIncludes(clazz) << endl;
-	print(os, "#include \"isl/IslFnPtr.h\"\n"
-		  "\n");
-	print(os, "namespace isl {{\n"
-		  "{0}"
-		  "\n", getForwardDecls(Deps));
+
+	print(os, "#include \"isl/IslFnPtr.h\"\n\n");
+	print(os, "namespace isl {{\n{0}\n", getForwardDecls(Deps));
 	if (subclass) {
 		string base_class = type2cpp(super);
 		print(os, "class {0} : public {1} {{\n", p_name, base_class);
@@ -1556,8 +1548,8 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	p->print_explicit_constructors_h(os);
 
-	print(os, "\n"
-		  "public:\n");
+	print(os, "\n");
+	print(os, "public:\n");
 
 	if (!clazz.is_ctx() && !subclass) {
 		print(os, "  const Ctx &Context() const {{ return ctx; }}\n");
