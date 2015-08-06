@@ -1144,7 +1144,7 @@ string cpp_generator::get_argument_list(FunctionDecl *method, int offset)
 	ostringstream os;
 	int num_params = method->getNumParams();
 
-	for (int i = 0; i < num_params; ++i) {
+	for (int i = offset; i < num_params; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		if (i)
 			os << ", ";
@@ -1359,23 +1359,19 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 	const string CxxMethod = methodname2cpp(clazz, IslMethod);
 	const string CxxClass = type2cpp(clazz.name);
 	int NumParams = cons->getNumParams();
-	int DropContext = first_arg_is_isl_ctx(cons);
 	int ContextSource = find_context_source(cons);
 
 	print(os, "  /// @brief Constructor for {0}\n"
 		  "  ///\n",
 	      IslMethod);
 
-	if (!(ContextSource > 0))
-		DropContext = 0;
-
-	for (int i = DropContext; i < NumParams; ++i) {
+	for (int i = 0; i < NumParams; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
 		print(os, "  /// @param {0}\n", param->getNameAsString());
 	}
 
         print(os, "  static {0} {1}({2});\n", CxxClass, CxxMethod,
-              get_argument_decl_list(cons, DropContext));
+              get_argument_decl_list(cons));
 }
 
 /**
@@ -1393,7 +1389,6 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	const string CxxClass = type2cpp(clazz.name);
 	int NumParams = cons->getNumParams();
 	int ContextSource = find_context_source(cons);
-	int DropContext = first_arg_is_isl_ctx(cons) && !(ContextSource == 0);
 	bool IsContext = clazz.is_ctx();
 	string Context = (IsContext) ? "That" : "_ctx";
 
@@ -1404,7 +1399,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	}
 
 	string ArgumentList = get_argument_list(cons);
-	string ArgumentDeclList = get_argument_decl_list(cons, DropContext);
+	string ArgumentDeclList = get_argument_decl_list(cons);
 
 	ostringstream handle_error_os;
 	printHandleErrorCall(handle_error_os, 2,
