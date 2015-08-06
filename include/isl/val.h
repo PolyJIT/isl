@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-struct __isl_export isl_val;
+struct __isl_subclass(isl_multi_val) isl_val;
 typedef struct isl_val isl_val;
 
 ISL_DECLARE_LIST(val)
@@ -146,11 +146,14 @@ __isl_give isl_printer *isl_printer_print_val(__isl_take isl_printer *p,
 void isl_val_dump(__isl_keep isl_val *v);
 __isl_give char *isl_val_to_str(__isl_keep isl_val *v);
 
+__isl_export
 __isl_give isl_multi_val *isl_multi_val_add_val(__isl_take isl_multi_val *mv,
 	__isl_take isl_val *v);
+__isl_export
 __isl_give isl_multi_val *isl_multi_val_mod_val(__isl_take isl_multi_val *mv,
 	__isl_take isl_val *v);
 
+__isl_constructor
 __isl_give isl_multi_val *isl_multi_val_read_from_str(isl_ctx *ctx,
 	const char *str);
 __isl_give isl_printer *isl_printer_print_multi_val(__isl_take isl_printer *p,
