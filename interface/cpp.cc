@@ -34,9 +34,11 @@ static IslDepMap IslExtraDeps = {
 	{"isl_ast_print_options", {"isl_ast"}},
 	{"isl_basic_set_list", {"isl_set"}},
 	{"isl_set_list", {"isl_set"}},
+	{"isl_union_set_list", {"isl_union_set"}},
 	{"isl_constraint_list", {"isl_constraint"}},
 	{"isl_id_list", {"isl_id"}},
 	{"isl_val_list", {"isl_val"}},
+	{"isl_multi_val", {"isl_val"}},
 	{"isl_ctx", {"isl_options", "isl_schedule_node"}},
 };
 
