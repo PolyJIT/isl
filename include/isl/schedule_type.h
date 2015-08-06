@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-enum isl_schedule_node_type {
+enum __isl_export isl_schedule_node_type {
 	isl_schedule_node_error = -1,
 	isl_schedule_node_band,
 	isl_schedule_node_context,
@@ -22,7 +22,7 @@ enum isl_schedule_node_type {
 	isl_schedule_node_set
 };
 
-struct isl_schedule_node;
+struct __isl_export isl_schedule_node;
 typedef struct isl_schedule_node isl_schedule_node;
 
 struct __isl_export isl_schedule;
