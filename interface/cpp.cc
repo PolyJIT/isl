@@ -1114,13 +1114,8 @@ string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset)
 	for (int i = offset; i < num_params; ++i) {
 		ParmVarDecl *param = method->getParamDecl(i);
 		bool isIsl = is_isl_class(param->getOriginalType());
-		//bool isCtx = is_isl_ctx(param->getOriginalType());
 		string prefix = (i > offset) ? ", " : "";
 
-		//if (isCtx)
-		//	print(os, "{0}{1} &{2}", prefix,
-		//	      paramtype2cpp(param), param->getNameAsString());
-		//else if (isIsl)
 		if (isIsl)
 			print(os, "{0}const {1} &{2}", prefix,
 			      paramtype2cpp(param), param->getNameAsString());
