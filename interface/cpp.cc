@@ -1408,14 +1408,9 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 		const ParmVarDecl *param = cons->getParamDecl(ContextSource);
 		std::string Context =
 		    cons->getParamDecl(ContextSource)->getNameAsString();
-		if (!is_isl_ctx(param->getOriginalType())) {
-			print(os, "  Ctx _ctx = {0}.Context();\n"
-				  "  _ctx.lock();\n",
-			      Context);
-		} else {
-			print(os, "  Ctx _ctx = {0};\n"
-				  "  _ctx.lock();\n", Context);
-		}
+		print(os, "  Ctx _ctx = {0}.Context();\n"
+			  	  "  _ctx.lock();\n",
+			  Context);
 	}
 
 	if(clazz.is_ctx()) {
@@ -1423,9 +1418,10 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 		  	  CxxClass, IslMethod, ArgumentList);
 	} else {
 		print(os, "{0}"
-		  	  "  {1} *That = {2}({3});\n"
-		  	  "{5}\n"
-		  	  "{4}\n",
+		  	      "  {1} *That = {2}({3});\n"
+		  	      "{5}\n"
+		  	      "  _ctx.unlock();\n"
+		  	      "{4}\n",
 		  	  prepare_os.str(), clazz.name, IslMethod, ArgumentList,
 		  	  handle_error_os.str(), result_os.str());
 		if (can_copy(clazz)) {
@@ -1544,7 +1540,9 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	if (!clazz.is_ctx() && !subclass) {
 		print(os, "  const Ctx &Context() const {{ return ctx; }}\n");
-	}
+	} else if (clazz.is_ctx()) {
+		print(os, "  const Ctx &Context() const {{ return *this; }}\n");
+    }
 
 	p->print_api_wrapper_h(os);
 	p->print_api_give_h(os);
