@@ -740,12 +740,8 @@ class cpp_class_printer
 	 */
 	virtual void print_extra_methods_h(ostream &os) {}
 	virtual void print_extra_methods(ostream &os) {}
-
-	virtual void print_constructor_h(ostream &os) {
-	}
-
-	virtual void print_constructor(ostream &os) {
-	}
+	virtual void print_constructor_h(ostream &os) {}
+	virtual void print_constructor(ostream &os) {}
 };
 
 class context_class_printer : public cpp_class_printer
@@ -1195,19 +1191,20 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 
 		if (Gives)
 			print(comment,
-			      "  ///@param {0} output parameter (isl_give)\n",
+			      "  /// @param {0} output parameter (isl_give)\n",
 			      ParamName);
 		else
-			print(comment, "  ///@param {0}\n", ParamName);
+			print(comment, "  /// @param {0}\n", ParamName);
 	}
 
 	os << endl;
-	print(os, "  ///@brief Generated from:\n"
-		  "  ///       {0}\n"
-		  "{1}"
-		  "  ///\n"
-		  "  ///@return A new {2}\n"
-		  "  {2} {3}({4}) const;\n",
+	print(os, "  /// @brief Generated from:\n"
+		  	  "  ///        @see {0}\n"
+		  	  "  ///\n"
+		  	  "{1}"
+		  	  "  ///\n"
+		  	  "  /// @return A new {2}\n"
+		  	  "  {2} {3}({4}) const;\n",
 	      method->getNameAsString(), comment.str(), CxxRetType, CxxMethod,
 	      get_argument_decl_list(method, 1));
 
@@ -1422,8 +1419,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	}
 
 	if(clazz.is_ctx()) {
-		print(os,
-		      "  return {0}({1}({2}));\n",
+		print(os, "  return {0}({1}({2}));\n",
 		  	  CxxClass, IslMethod, ArgumentList);
 	} else {
 		print(os, "{0}"
