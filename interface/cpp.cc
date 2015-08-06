@@ -919,7 +919,7 @@ string cpp_generator::rettype2cpp(const FunctionDecl *method)
  * @brief Keywords in C++, do not use these.
  */
 static const char *keywords[] = {"void",  "and", "or", "union", "foreach",
-	nullptr};
+	"delete", nullptr};
 
 string cpp_generator::methodname2cpp(const isl_class &clazz,
 	const string &methodname)
