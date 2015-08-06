@@ -1025,6 +1025,7 @@ __isl_give isl_printer *isl_printer_print_union_pw_aff(
 ISL_DECLARE_MULTI(union_pw_aff)
 ISL_DECLARE_MULTI_NEG(union_pw_aff)
 
+__isl_constructor
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_from_multi_aff(
 	__isl_take isl_multi_aff *ma);
 __isl_constructor
@@ -1033,39 +1034,52 @@ __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_from_union_pw_aff(
 __isl_constructor
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_from_multi_pw_aff(
 	__isl_take isl_multi_pw_aff *mpa);
+__isl_constructor
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_multi_val_on_domain(
 	__isl_take isl_union_set *domain, __isl_take isl_multi_val *mv);
+__isl_constructor
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_multi_aff_on_domain(
 	__isl_take isl_union_set *domain, __isl_take isl_multi_aff *ma);
 
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_floor(
 	__isl_take isl_multi_union_pw_aff *mupa);
 
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_intersect_domain(
 	__isl_take isl_multi_union_pw_aff *mupa,
 	__isl_take isl_union_set *uset);
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_intersect_params(
 	__isl_take isl_multi_union_pw_aff *mupa, __isl_take isl_set *params);
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_intersect_range(
 	__isl_take isl_multi_union_pw_aff *mupa, __isl_take isl_set *set);
 
+__isl_export
 __isl_give isl_union_set *isl_multi_union_pw_aff_domain(
 	__isl_take isl_multi_union_pw_aff *mupa);
 
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_coalesce(
 	__isl_take isl_multi_union_pw_aff *aff);
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_gist(
 	__isl_take isl_multi_union_pw_aff *aff,
 	__isl_take isl_union_set *context);
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_gist_params(
 	__isl_take isl_multi_union_pw_aff *aff, __isl_take isl_set *context);
 
+__isl_export
 __isl_give isl_union_pw_aff *isl_multi_union_pw_aff_apply_aff(
 	__isl_take isl_multi_union_pw_aff *mupa, __isl_take isl_aff *aff);
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_apply_multi_aff(
 	__isl_take isl_multi_union_pw_aff *mupa, __isl_take isl_multi_aff *ma);
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_apply_multi_aff(
 	__isl_take isl_multi_union_pw_aff *mupa, __isl_take isl_multi_aff *ma);
+__isl_export
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_apply_pw_multi_aff(
 	__isl_take isl_multi_union_pw_aff *mupa,
 	__isl_take isl_pw_multi_aff *pma);
@@ -1076,6 +1090,7 @@ isl_multi_union_pw_aff_pullback_union_pw_multi_aff(
 	__isl_take isl_multi_union_pw_aff *mupa,
 	__isl_take isl_union_pw_multi_aff *upma);
 
+__isl_constructor
 __isl_give isl_union_pw_multi_aff *
 isl_union_pw_multi_aff_from_multi_union_pw_aff(
 	__isl_take isl_multi_union_pw_aff *mupa);
@@ -1085,10 +1100,12 @@ __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_union_add(
 	__isl_take isl_multi_union_pw_aff *mupa1,
 	__isl_take isl_multi_union_pw_aff *mupa2);
 
+__isl_constructor
 __isl_give isl_multi_union_pw_aff *
 isl_multi_union_pw_aff_from_union_pw_multi_aff(
 	__isl_take isl_union_pw_multi_aff *upma);
 
+__isl_constructor
 __isl_give isl_multi_union_pw_aff *isl_multi_union_pw_aff_from_union_map(
 	__isl_take isl_union_map *umap);
 __isl_overload
