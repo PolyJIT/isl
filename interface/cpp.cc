@@ -1272,11 +1272,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 
 	// Create argument list
 	ostringstream param_os;
-	for (int i = 1; i < NumParams; ++i) {
-		ParmVarDecl *param = method->getParamDecl(i);
-		param_os << ", ";
-		print_argument(param_os, param);
-	}
+        param_os << get_argument_list(method, 1);
 
 	// Handle result args
 	ostringstream result_os;
