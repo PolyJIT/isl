@@ -5,5 +5,4 @@
 #include <isl/union_set.h>
 #include <isl/union_map.h>
 #include <isl/flow.h>
-#include <isl/schedule.h>
 #include <isl/schedule_node.h>
