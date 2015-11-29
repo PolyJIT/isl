@@ -10,6 +10,9 @@
 #define FMT_HEADER_ONLY
 #include "cppformat/format.h"
 
+#define DEBUG(X) \
+  do { X; } while (0)
+
 using namespace fmt;
 
 static const string srcPath = "";
