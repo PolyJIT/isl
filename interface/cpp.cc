@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <algorithm>
 
 #define FMT_HEADER_ONLY
 #include "cppformat/format.h"
@@ -1799,25 +1800,19 @@ Dependences cpp_generator::getDependences(isl_class &clazz)
 	if (can_be_printed(clazz))
 		Deps.insertForward("Printer");
 
-	auto ScanFunctionArgs = [&] (const clang::FunctionDecl *F) {
-		for (unsigned i = 0; i < F->getNumParams(); ++i) {
-			const ParmVarDecl *P = F->getParamDecl(i);
+	auto ScanFunctionArgs = [&] (const clang::FunctionDecl *const F) {
+		for (auto P : F->params()) {
 			insertIfDependency(clazz, Deps, P->getOriginalType());
 		}
 	};
 
-	for (it = clazz.constructors.begin(), ie = clazz.constructors.end();
-	     it != ie; ++it) {
-		ScanFunctionArgs(*it);
-	}
-
-	for (it = clazz.methods.begin(), ie = clazz.methods.end(); it != ie;
-	     ++it) {
-		clang::FunctionDecl *M = *it;
-		ScanFunctionArgs(M);
-
-		insertIfDependency(clazz, Deps, M->getReturnType());
-	}
+	std::for_each(clazz.constructors.begin(), clazz.constructors.end(),
+		ScanFunctionArgs);
+	std::for_each(clazz.methods.begin(), clazz.methods.end(),
+		[&] (const FunctionDecl *const M) {
+			ScanFunctionArgs(M);
+			insertIfDependency(clazz, Deps, M->getReturnType());
+		});
 
 	string super;
 	if (is_subclass(clazz.type, super))
