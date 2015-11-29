@@ -49,9 +49,9 @@ using fmt::print;
 using fmt::format;
 
 /**
- * @brief Get the necessary include for an isl object
+ * \brief Get the necessary include for an isl object
  *
- * @param islName the isl-name of the object
+ * \param islName the isl-name of the object
  *
  * @return the include name (without .h suffix).
  */
@@ -88,14 +88,14 @@ static set<HeaderInfo> complement(const set<HeaderInfo> &LHS,
 }
 
 /**
- * @brief Get the includes for a given set of dependencies.
+ * \brief Get the includes for a given set of dependencies.
  *
  * This function is used to create the include preamble of a .cpp or .h
  * file of the isl bindings.
  *
- * @param deps the header dependencies. The set contains pairs of string and
+ * \param deps the header dependencies. The set contains pairs of string and
  *        bool. If the bool is True, we require the full header.
- * @param impl True, if we are a .cpp file, not a header.
+ * \param impl True, if we are a .cpp file, not a header.
  *
  * @return a string containing the include preamble for a .cpp or .h file
  */
@@ -129,12 +129,12 @@ const string cpp_generator::getIncludes(isl_class &clazz, bool impl = false)
 }
 
 /**
- * @brief Get the forward declarations for a given set of dependencies.
+ * \brief Get the forward declarations for a given set of dependencies.
  *
  * This function is used to create the forward declarations required in the
  * .cpp/.h file of the isl bindings.
  *
- * @param deps the header dependencies. The set contains pairs of string and
+ * \param deps the header dependencies. The set contains pairs of string and
  *        bool. If the bool is True, we require the full header.
  *
  * @return a string containing the forward declarations for a .cpp or .h file
@@ -150,10 +150,10 @@ static const string getForwardDecls(Dependences &Deps)
 }
 
 /**
- * @brief Indent the outstream by a given depth with spaces.
+ * \brief Indent the outstream by a given depth with spaces.
  *
- * @param os the outstream to indent
- * @param depth the indenting depth (one space)
+ * \param os the outstream to indent
+ * \param depth the indenting depth (one space)
  *
  * @return the indentend outstream
  */
@@ -171,13 +171,13 @@ static string indent(unsigned depth)
 }
 
 /**
- * @brief Create a header guard header(!).
+ * \brief Create a header guard header(!).
  *
  * Creates:
  *  #ifndef ISL_CXX_<CLASSNAME>_H
  *  #define ISL_CXX_<CLASSNAME>_H
  *
- * @param className the class name of the isl object
+ * \param className the class name of the isl object
  *
  * @return a string containing the header guard header.
  */
@@ -190,12 +190,12 @@ static const string getGuardHeader(const string className)
 }
 
 /**
- * @brief Create a header guard footer.
+ * \brief Create a header guard footer.
  *
  * Creates:
  *  #endif // ISL_CXX_<CLASSNAME>_H
  *
- * @param className the class name of the isl object
+ * \param className the class name of the isl object
  *
  * @return a string containing the header guard footer
  */
@@ -205,12 +205,12 @@ static const string getGuardFooter(const string className)
 }
 
 /**
- * @brief Convert an isl name to camel case.
+ * \brief Convert an isl name to camel case.
  *
  * This is copied from the java bindings.
  *
- * @param name
- * @param startUpper
+ * \param name
+ * \param startUpper
  *
  * @return
  */
@@ -231,13 +231,13 @@ static string name2camelcase(const string &name, bool startUpper)
 }
 
 /**
- * @brief Return the initials of the name.
+ * \brief Return the initials of the name.
  *
  * Initials is a substring of name, containing only upper case letters.
  * Example:
  *  PwAff -> PA
  *
- * @param name the name to get the initials from.
+ * \param name the name to get the initials from.
  *
  * @return the initials of the name.
  */
@@ -256,14 +256,14 @@ static string name2initials(const string &name)
 }
 
 /**
- * @brief Convert an enum name to a cpp-compatible type name.
+ * \brief Convert an enum name to a cpp-compatible type name.
  *
  * We cut of the isl_ prefix and convert the rest to a camel-case name.
  *
  * Example:
  *  isl_ast_options -> AstOptions
  *
- * @param valname the name of the enum value
+ * \param valname the name of the enum value
  *
  * @return
  */
@@ -277,12 +277,12 @@ static string enumval2cpp(const string &valname)
 }
 
 /**
- * @brief Drop the isl_ prefix of a name.
+ * \brief Drop the isl_ prefix of a name.
  *
  * This is not actually checking for the prefix, we just drop the first
  * 4 chars.
  *
- * @param name
+ * \param name
  *
  * @return
  */
@@ -315,11 +315,11 @@ static void printHandleErrorCall(ostream &os, int level, string &&what,
 }
 
 /**
- * @brief Print a custom deleter lambda function (cleanup for smart-pointers)
+ * \brief Print a custom deleter lambda function (cleanup for smart-pointers)
  *
- * @param os
- * @param name
- * @param cname
+ * \param os
+ * \param name
+ * \param cname
  */
 static void print_custom_deleter(ostream &os, string name, string cname)
 {
@@ -331,13 +331,13 @@ static void print_custom_deleter(ostream &os, string name, string cname)
 }
 
 /**
- * @brief Print a Pointer wrapper to store isl objects.
+ * \brief Print a Pointer wrapper to store isl objects.
  *
  * We need a complete type for using smart pointers later on, so we wrap
  * isl pointers in a very basic way to provide a complete type.
  *
- * @param os
- * @param name
+ * \param os
+ * \param name
  */
 static void print_ptr_wrapper(ostream &os, string name)
 {
@@ -356,7 +356,7 @@ static void print_ptr_wrapper(ostream &os, string name)
 }
 
 /**
- * @brief Print a CPP class.
+ * \brief Print a CPP class.
  *
  * Provide methods to print various parts of a cpp file.
  * This includes:
@@ -416,12 +416,12 @@ class cpp_class_printer
 
       public:
 	/**
-	 * @brief Create a Class printer
+	 * \brief Create a Class printer
 	 *
-	 * @param clazz the isl_class to print
-	 * @param subclass true, if we are a subclass of another isl_class.
-	 * @param can_copy true, if we can create copies of ourself.
-	 * @param super our superclass.
+	 * \param clazz the isl_class to print
+	 * \param subclass true, if we are a subclass of another isl_class.
+	 * \param can_copy true, if we can create copies of ourself.
+	 * \param super our superclass.
 	 */
 	explicit cpp_class_printer(const isl_class &clazz, bool subclass,
 		bool can_copy, const string &super, bool is_inplace) :
@@ -434,9 +434,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print declaration of explicit constructors
+	 * \brief Print declaration of explicit constructors
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_explicit_constructors_h(ostream &os)
 	{
@@ -453,9 +453,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print declaration of a copy constructor
+	 * \brief Print declaration of a copy constructor
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_copy_constructor_h(ostream &os)
 	{
@@ -472,9 +472,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print definition of the copy assignment operator
+	 * \brief Print definition of the copy assignment operator
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_copy_assignment(ostream &os)
 	{
@@ -491,9 +491,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print declaration of the copy assignment operator
+	 * \brief Print declaration of the copy assignment operator
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_copy_assignment_h(ostream &os)
 	{
@@ -507,9 +507,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print declaration of the move constructor
+	 * \brief Print declaration of the move constructor
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_move_constructor_h(ostream &os)
 	{
@@ -524,9 +524,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print declaration of the move assignment operator
+	 * \brief Print declaration of the move assignment operator
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_move_assignment_h(ostream &os)
 	{
@@ -543,9 +543,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print definition of the API wrapper
+	 * \brief Print definition of the API wrapper
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_api_wrapper(ostream &os)
 	{
@@ -564,20 +564,20 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the declaration of the API wrapper
+	 * \brief Print the declaration of the API wrapper
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_api_wrapper_h(ostream &os)
 	{
 		// 1. Wrap an isl_* object.
 		print(os,
-		      "  ///@brief Wrap an existing isl object.\n"
+		      "  ///\brief Wrap an existing isl object.\n"
 		      "  ///\n"
 		      "  /// This serves as an entry point into the C++ API.\n"
 		      "  /// We take ownership of the isl object.\n"
 		      "  ///\n"
-		      "  ///@param That the {0} we want to wrap.\n"
+		      "  /// \\param That the {0} we want to wrap.\n"
 		      "  explicit {1}({0} *That) : ", name, p_name);
 
 		print(os,
@@ -598,16 +598,16 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the definition of the API unwrapper
+	 * \brief Print the definition of the API unwrapper
 	 *
 	 * The API Unwrapper returns a _copy_ of the ISL object, if possible.
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_api_unwrapper(ostream &os)
 	{
-		print(os, "/// @brief Unwrap the stored isl object.\n"
-			  "/// @return A the wrapped isl object.\n"
+		print(os, "/// \\brief Unwrap the stored isl object.\n"
+			  "/// \\returns A the wrapped isl object.\n"
 			  "inline {0} *{1}::Get() const {{"
 			  "  return ({0} *){2};\n"
 			  "}}\n",
@@ -615,31 +615,31 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the declaration of the API unwrapper
+	 * \brief Print the declaration of the API unwrapper
 	 *
 	 * The API Unwrapper returns a _copy_ of the ISL object, if possible.
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_api_unwrapper_h(ostream &os)
 	{
-		print(os, "  /// @brief unwrap the stored isl object.\n"
-			  "  /// @return a the wrapped isl object.\n"
+		print(os, "  /// \\brief unwrap the stored isl object.\n"
+			  "  /// \\return a the wrapped isl object.\n"
 			  "  {0} *Get() const;\n",
 		      name);
 	}
 
 	/**
-	 * @brief Print the definition of the API Give
+	 * \brief Print the definition of the API Give
 	 *
 	 * Returns the wrapped pointer, this exits isl
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_api_give(ostream &os)
 	{
 		print(os,
-		      "/// @brief Release ownership of the wrapped object.\n"
+		      "/// \brief Release ownership of the wrapped object.\n"
 		      "///\n"
 		      "/// You are on your own now buddy.\n"
 		      "/// The wrapper cannot be used anymore after calling "
@@ -664,30 +664,30 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the declaration of the API Give
+	 * \brief Print the declaration of the API Give
 	 *
 	 * Returns the wrapped pointer, this exits isl
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_api_give_h(ostream &os)
 	{
 		print(os,
-		      "  /// @brief Release ownership of the wrapped object.\n"
+		      "  /// \\brief Release ownership of the wrapped object.\n"
 		      "  ///\n"
 		      "  /// You are on your own now buddy.\n"
 		      "  /// The wrapper cannot be used anymore after calling "
 		      "Give()\n"
 		      "  ///\n"
-		      "  ///@return the wrapped isl object.\n"
+		      "  /// \\returns the wrapped isl object.\n"
 		      "  {0} *Give();\n",
 		      name);
 	}
 
 	/**
-	 * @brief Print the definition of a destructor
+	 * \brief Print the definition of a destructor
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_destructor(ostream &os)
 	{
@@ -701,9 +701,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the declaration of a destructor
+	 * \brief Print the declaration of a destructor
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_destructor_h(ostream &os)
 	{
@@ -714,9 +714,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the definition of a toStr() method.
+	 * \brief Print the definition of a toStr() method.
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_print_methods(ostream &os)
 	{
@@ -731,9 +731,9 @@ class cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the declaration of a toStr() method.
+	 * \brief Print the declaration of a toStr() method.
 	 *
-	 * @param os
+	 * \param os
 	 */
 	virtual void print_print_methods_h(ostream &os)
 	{
@@ -754,12 +754,12 @@ class context_class_printer : public cpp_class_printer
 {
       public:
 	/**
-	 * @brief Create a Class printer
+	 * \brief Create a Class printer
 	 *
-	 * @param clazz the isl_class to print
-	 * @param subclass true, if we are a subclass of another isl_class.
-	 * @param can_copy true, if we can create copies of ourself.
-	 * @param super our superclass.
+	 * \param clazz the isl_class to print
+	 * \param subclass true, if we are a subclass of another isl_class.
+	 * \param can_copy true, if we can create copies of ourself.
+	 * \param super our superclass.
 	 */
 	explicit context_class_printer(const isl_class &clazz, bool subclass,
 				       bool can_copy, const string &super,
@@ -769,20 +769,20 @@ class context_class_printer : public cpp_class_printer
 	}
 
 	/**
-	 * @brief Print the declaration of the API wrapper
+	 * \brief Print the declaration of the API wrapper
 	 *
-	 * @param os
+	 * \param os
 	 */
 	void print_api_wrapper_h(ostream &os) override
 	{
 		// 1. Wrap an isl_* object.
 		print(os,
-		      "  ///@brief Wrap an existing isl object.\n"
+		      "  /// \\brief Wrap an existing isl object.\n"
 		      "  ///\n"
 		      "  /// This serves as an entry point into the C++ API.\n"
 		      "  /// We take ownership of the isl object.\n"
 		      "  ///\n"
-		      "  ///@param That the {0} we want to wrap.\n"
+		      "  /// \\param That the {0} we want to wrap.\n"
 		      "  explicit {1}({0} *That) : ", name, p_name);
 
 		print(os, "This(std::make_shared<isl::{0}::ptr>(That)) "
@@ -836,11 +836,11 @@ class context_class_printer : public cpp_class_printer
 };
 
 /**
- * @brief Convert a parameter type to a cpp compatible name
+ * \brief Convert a parameter type to a cpp compatible name
  *
  * Copied from cpp bindings.
  *
- * @param decl
+ * \param decl
  *
  * @return
  */
@@ -850,7 +850,7 @@ string cpp_generator::paramtype2cpp(const ParmVarDecl *decl)
 }
 
 /**
- * @brief Convert a param type to a cpp compatible name.
+ * \brief Convert a param type to a cpp compatible name.
  *
  * This is copied from the java bindings, with minor adjustments to c++
  *
@@ -859,9 +859,9 @@ string cpp_generator::paramtype2cpp(const ParmVarDecl *decl)
  * When wrapperTypes is true, a wrapper class (e.g. "Integer") is
  * returned instead of the underlying primitive type (e.g. "int").
  *
- * @param type
- * @param wrapperTypes
- * @param isBool
+ * \param type
+ * \param wrapperTypes
+ * \param isBool
  *
  * @return
  */
@@ -905,14 +905,14 @@ string cpp_generator::paramtype2cpp(QualType type, bool wrapperTypes,
 }
 
 /**
- * @brief Get the return type of a isl method in isl compatible form.
+ * \brief Get the return type of a isl method in isl compatible form.
  *
  * Copied from cpp bindings.
  *
  * Get the return type of the Java method corresponding
  * to the given isl function.
  *
- * @param method
+ * \param method
  *
  * @return
  */
@@ -922,7 +922,7 @@ string cpp_generator::rettype2cpp(const FunctionDecl *method)
 }
 
 /**
- * @brief Keywords in C++, do not use these.
+ * \brief Keywords in C++, do not use these.
  */
 static const char *keywords[] = {"void",  "and", "or", "union", "foreach",
 	"delete", nullptr};
@@ -942,13 +942,13 @@ string cpp_generator::methodname2cpp(const isl_class &clazz,
 }
 
 /**
- * @brief Get an isl_ptr. Depending on the memory management qualifiers.
+ * \brief Get an isl_ptr. Depending on the memory management qualifiers.
  *
  * Either we get a copy or the wrapped objects.
  *
- * @param classname the isl classname (unused)
- * @param expression the isl expression to get a pointer from
- * @param is_takes True, if we don't need a copy of the wrapped object.
+ * \param classname the isl classname (unused)
+ * \param expression the isl expression to get a pointer from
+ * \param is_takes True, if we don't need a copy of the wrapped object.
  *
  * @return an expression that returns an isl pointer type.
  */
@@ -959,11 +959,11 @@ string cpp_generator::isl_ptr(const string &classname, const string &expression,
 }
 
 /**
- * @brief Return the isl type name of this type
+ * \brief Return the isl type name of this type
  *
  * Copied from cpp bindings.
  *
- * @param ty
+ * \param ty
  *
  * @return
  */
@@ -973,10 +973,10 @@ string cpp_generator::cppTypeName(QualType ty)
 }
 
 /**
- * @brief Prepare a function argument before it is used.
+ * \brief Prepare a function argument before it is used.
  *
- * @param os
- * @param param
+ * \param os
+ * \param param
  */
 void cpp_generator::prepare_argument(ostream &os, const ParmVarDecl *param)
 {
@@ -996,14 +996,14 @@ void cpp_generator::prepare_argument(ostream &os, const ParmVarDecl *param)
 }
 
 /**
- * @brief Tag for function pointers (auto-incremented).
+ * \brief Tag for function pointers (auto-incremented).
  */
 static int fn_ptr_id = 0;
 /**
- * @brief Print the function argument.
+ * \brief Print the function argument.
  *
- * @param os
- * @param param
+ * \param os
+ * \param param
  */
 void cpp_generator::print_argument(ostream &os, ParmVarDecl *param)
 {
@@ -1028,11 +1028,11 @@ void cpp_generator::print_argument(ostream &os, ParmVarDecl *param)
 }
 
 /**
- * @brief Perform post-processing on return values.
+ * \brief Perform post-processing on return values.
  *
- * @param os
- * @param ctx
- * @param param
+ * \param os
+ * \param ctx
+ * \param param
  */
 void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
 	const ParmVarDecl *param)
@@ -1054,11 +1054,11 @@ void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
 }
 
 /**
- * @brief Convert return values into enum values
+ * \brief Convert return values into enum values
  *
- * @param os
- * @param res
- * @param enu
+ * \param os
+ * \param res
+ * \param enu
  */
 void cpp_generator::handle_enum_return(ostream &os, const string &res,
 	const isl_enum &enu)
@@ -1067,11 +1067,11 @@ void cpp_generator::handle_enum_return(ostream &os, const string &res,
 }
 
 /**
- * @brief Handle all return values and perform necessary checks/conversion.
+ * \brief Handle all return values and perform necessary checks/conversion.
  *
- * @param os
- * @param method
- * @param resVar
+ * \param os
+ * \param method
+ * \param resVar
  */
 void cpp_generator::handle_return(ostream &os, FunctionDecl *method,
 	const string &resVar)
@@ -1104,10 +1104,10 @@ void cpp_generator::handle_return(ostream &os, FunctionDecl *method,
 }
 
 /**
- * @brief Create a list of argument declarations
+ * \brief Create a list of argument declarations
  *
- * @param method the method we create the list for
- * @param offset skip the first <offset> arguments
+ * \param method the method we create the list for
+ * \param offset skip the first <offset> arguments
  *
  * @return list of argument declarations
  */
@@ -1131,10 +1131,10 @@ string cpp_generator::get_argument_decl_list(FunctionDecl *method, int offset)
 }
 
 /**
- * @brief Create a list of arguments
+ * \brief Create a list of arguments
  *
- * @param method the method we create the list for
- * @param offset skip the first <offset> arguments
+ * \param method the method we create the list for
+ * \param offset skip the first <offset> arguments
  *
  * @return
  */
@@ -1153,7 +1153,7 @@ string cpp_generator::get_argument_list(FunctionDecl *method, int offset)
 }
 
 /**
- * @brief Print a method declaration
+ * \brief Print a method declaration
  *
  * Copied from java bindings:
  *
@@ -1173,11 +1173,11 @@ string cpp_generator::get_argument_list(FunctionDecl *method, int offset)
  * If the function consumes a reference, then we pass it a copy of
  * the actual argument.
  *
- * @param os
- * @param clazz
- * @param method
- * @param subclass
- * @param super
+ * \param os
+ * \param clazz
+ * \param method
+ * \param subclass
+ * \param super
  */
 void cpp_generator::print_method(ostream &os, isl_class &clazz,
 				 FunctionDecl *method, bool subclass,
@@ -1197,26 +1197,25 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 
 		if (Gives)
 			print(comment,
-			      "  /// @param {0} output parameter (isl_give)\n",
+			      "  /// \\param [out] {0} (isl_give)\n",
 			      ParamName);
 		else
-			print(comment, "  /// @param {0}\n", ParamName);
+			print(comment, "  /// \\param [in] {0}\n", ParamName);
 	}
 
 	os << endl;
-	print(os, "  /// @brief Generated from:\n"
-		  	  "  ///        @see {0}\n"
-		  	  "  ///\n"
-		  	  "{1}"
-		  	  "  ///\n"
-		  	  "  /// @return A new {2}\n"
-		  	  "  {2} {3}({4}) const;\n",
+	print(os, "  /// \\brief Generated from  ::<{0}>\n"
+		  "  ///\n"
+		  "{1}"
+		  "  ///\n"
+		  "  /// \\returns A new {2}\n"
+		  "  {2} {3}({4}) const;\n",
 	      method->getNameAsString(), comment.str(), CxxRetType, CxxMethod,
 	      get_argument_decl_list(method, 1));
 
 	// if (is_isl_class(method->getReturnType())) {
 	// 	os << endl;
-	// 	print(os, "  ///@brief Generated from:\n"
+	// 	print(os, "  ///\brief Generated from:\n"
 	// 		  "  ///       {0}\n"
 	// 		  "{1}"
 	// 		  "  ///\n"
@@ -1227,7 +1226,7 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 }
 
 /**
- * @brief Print a method definition
+ * \brief Print a method definition
  *
  * Print a cpp method corresponding to the C function "method".
  * "subclass" is set if the method belongs to a class that is a subclass
@@ -1245,11 +1244,11 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
  * If the function consumes a reference, then we pass it a copy of
  * the actual argument.
  *
- * @param os
- * @param clazz
- * @param method
- * @param subclass
- * @param super
+ * \param os
+ * \param clazz
+ * \param method
+ * \param subclass
+ * \param super
  */
 void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 				      FunctionDecl *method, bool,
@@ -1313,7 +1312,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 	// if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
 	// 	os << endl;
 	// 	print(
-	// 	    os, "/// @brief inplace variant\n"
+	// 	    os, "/// \brief inplace variant\n"
 	// 		"inline void {1}::{0}Inplace({2}) {{\n"
 	// 		"  {10}.lock();\n"
 	// 		"  // Prepare arguments\n"
@@ -1334,7 +1333,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 }
 
 /**
- * @brief Print definition of a constructor.
+ * \brief Print definition of a constructor.
  *
  * Print part of the constructor for this isl_class.
  *
@@ -1344,9 +1343,9 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
  *
  * If the function consumes a reference, then we pass it a copy of
  * the actual argument.
- * @param os
- * @param clazz
- * @param cons
+ * \param os
+ * \param clazz
+ * \param cons
  */
 void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 				      FunctionDecl *cons)
@@ -1355,15 +1354,14 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 	const string CxxMethod = methodname2cpp(clazz, IslMethod);
 	const string CxxClass = type2cpp(clazz.name);
 	int NumParams = cons->getNumParams();
-	int ContextSource = find_context_source(cons);
 
-	print(os, "  /// @brief Constructor for {0}\n"
+	print(os, "  /// \\brief Constructor for {0}\n"
 		  "  ///\n",
 	      IslMethod);
 
 	for (int i = 0; i < NumParams; ++i) {
 		ParmVarDecl *param = cons->getParamDecl(i);
-		print(os, "  /// @param {0}\n", param->getNameAsString());
+		print(os, "  /// \\param {0}\n", param->getNameAsString());
 	}
 
         print(os, "  static {0} {1}({2});\n", CxxClass, CxxMethod,
@@ -1371,11 +1369,11 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 }
 
 /**
- * @brief Print the constructor definition
+ * \brief Print the constructor definition
  *
- * @param os
- * @param clazz
- * @param cons
+ * \param os
+ * \param clazz
+ * \param cons
  */
 void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 					   FunctionDecl *cons)
@@ -1411,7 +1409,6 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	print(os, "inline {0} {0}::{1}({2}) {{\n", CxxClass, CxxMethod,
 	      ArgumentDeclList);
 	if (ContextSource >= 0) {
-		const ParmVarDecl *param = cons->getParamDecl(ContextSource);
 		std::string Context =
 		    cons->getParamDecl(ContextSource)->getNameAsString();
 		print(os, "  Ctx _ctx = {0}.Context();\n"
@@ -1443,7 +1440,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 }
 
 /**
- * @brief Generate all
+ * \brief Generate all
  */
 void cpp_generator::generate()
 {
@@ -1452,7 +1449,7 @@ void cpp_generator::generate()
 }
 
 /**
- * @brief A list of non-copyable objects that are not declare uncopyable in isl.
+ * \brief A list of non-copyable objects that are not declare uncopyable in isl.
  *
  * TODO: Fix this in isl, maybe?
  *
@@ -1461,9 +1458,9 @@ void cpp_generator::generate()
  */
 static set<string> NonCopyable = {"isl_ctx", "isl_schedule", "isl_printer"};
 /**
- * @brief Return true, if the class name is in the NonCopyable set.
+ * \brief Return true, if the class name is in the NonCopyable set.
  *
- * @param clazz
+ * \param clazz
  *
  * @return
  */
@@ -1473,7 +1470,7 @@ bool cpp_generator::can_copy(isl_class &clazz)
 }
 
 /**
- * @brief Print out the definition of this isl_class.
+ * \brief Print out the definition of this isl_class.
  *
  * We first check if this isl_class is a subclass of some other class.
  * If it is, we make sure the superclass is printed out first.
@@ -1489,7 +1486,7 @@ bool cpp_generator::can_copy(isl_class &clazz)
  * constructor functions and the return types of those function returning
  * an isl object.
  *
- * @param clazz
+ * \param clazz
  */
 void cpp_generator::print_class(isl_class &clazz)
 {
@@ -1600,8 +1597,8 @@ void cpp_generator::print_class(isl_class &clazz)
 	if (can_cp) {
 		print(
 		    os,
-		    "  /// @brief Implement lt via pointer comparison of the\n"
-		    "  ///        wrapped isl objects.\n"
+		    "  /// \\brief Implement lt via pointer comparison of the\n"
+		    "  ///         wrapped isl objects.\n"
 		    "  bool operator<(const {0} &RHS) const {{ return This < "
 		    "RHS.This; }}\n",
 		    p_name);
@@ -1617,9 +1614,9 @@ void cpp_generator::print_class(isl_class &clazz)
 }
 
 /**
- * @brief Print the class implementation
+ * \brief Print the class implementation
  *
- * @param clazz
+ * \param clazz
  */
 void cpp_generator::print_class_impl(isl_class &clazz)
 {
@@ -1714,7 +1711,7 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 }
 
 /**
- * @brief Generate all classes.
+ * \brief Generate all classes.
  */
 void cpp_generator::generateClasses()
 {
@@ -1730,11 +1727,11 @@ void cpp_generator::generateClasses()
 }
 
 /**
- * @brief Update the dependency set, if necessary.
+ * \brief Update the dependency set, if necessary.
  *
- * @param p_name
- * @param Deps
- * @param Ty
+ * \param p_name
+ * \param Deps
+ * \param Ty
  */
 void cpp_generator::insertIfDependency(isl_class &clazz,
 	Dependences &Deps, QualType && Ty)
@@ -1788,9 +1785,9 @@ void cpp_generator::insertIfDependency(isl_class &clazz,
 }
 
 /**
- * @brief Get all dependencies of an isl class.
+ * \brief Get all dependencies of an isl class.
  *
- * @param clazz
+ * \param clazz
  *
  * @return
  */
@@ -1837,7 +1834,7 @@ Dependences cpp_generator::getDependences(isl_class &clazz)
 }
 
 /**
- * @brief Print a super class for al isl objects.
+ * \brief Print a super class for al isl objects.
  *
  * This class holds the context and the wrapped isl object.
  */
@@ -1876,9 +1873,9 @@ void cpp_generator::print_isl_obj_class()
 }
 
 /**
- * @brief Print an enum.
+ * \brief Print an enum.
  *
- * @param enu
+ * \param enu
  */
 void cpp_generator::print_enum(const isl_enum &enu)
 {
@@ -1901,7 +1898,7 @@ void cpp_generator::print_enum(const isl_enum &enu)
 }
 
 /**
- * @brief Print an isl exception class
+ * \brief Print an isl exception class
  */
 void cpp_generator::print_isl_exception_class()
 {
@@ -1929,7 +1926,7 @@ void cpp_generator::print_isl_exception_class()
 }
 
 /**
- * @brief Print the isl function pointer helper class.
+ * \brief Print the isl function pointer helper class.
  *
  * This creates a binding between parameters and a std::function compatible
  * callback function. This way we can bind the arguments in our wrapper
@@ -1999,7 +1996,7 @@ void cpp_generator::print_function_ptr_helper()
 }
 
 /**
- * @brief Generate all enums.
+ * \brief Generate all enums.
  */
 void cpp_generator::generateEnums()
 {
@@ -2009,11 +2006,11 @@ void cpp_generator::generateEnums()
 }
 
 /**
- * @brief Construct a new cpp_generator.
+ * \brief Construct a new cpp_generator.
  *
- * @param types
- * @param functions
- * @param enums
+ * \param types
+ * \param functions
+ * \param enums
  */
 cpp_generator::cpp_generator(set<RecordDecl *> &types,
 	set<FunctionDecl *> &functions,
