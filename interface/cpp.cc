@@ -746,7 +746,6 @@ class cpp_class_printer
 	 * Print additional methods required for this class.
 	 */
 	virtual void print_extra_methods_h(ostream &os) {}
-	virtual void print_extra_methods(ostream &os) {}
 	virtual void print_constructor_h(ostream &os) {}
 	virtual void print_constructor(ostream &os) {}
 };
@@ -1582,10 +1581,6 @@ void cpp_generator::print_class(isl_class &clazz)
 		print(os, "  virtual {0} as{0}() const override;\n", s_name);
 	}
 
-	if (clazz.is_ctx())
-		for (auto method : clazz.methods)
-			print(os, "// M: {}\n", method->getNameAsString());
-
 	for (auto method : clazz.methods) {
 		print_method(os, clazz, method, subclass, super);
 	}
@@ -1664,7 +1659,6 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		p->print_destructor(os);
 	}
 
-	p->print_extra_methods(os);
 	p->print_api_give(os);
 	p->print_api_unwrapper(os);
 
