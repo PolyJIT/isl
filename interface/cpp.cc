@@ -1581,8 +1581,13 @@ void cpp_generator::print_class(isl_class &clazz)
 		print(os, "  virtual {0} as{0}() const override;\n", s_name);
 	}
 
-	for (auto method : clazz.methods)
+	if (clazz.is_ctx())
+		for (auto method : clazz.methods)
+			print(os, "// M: {}\n", method->getNameAsString());
+
+	for (auto method : clazz.methods) {
 		print_method(os, clazz, method, subclass, super);
+	}
 
 	p->print_copy_constructor_h(os);
 	p->print_copy_assignment_h(os);
