@@ -163,6 +163,9 @@ isl.cpp: extract_interface$(EXEEXT) $(srcdir)/all.h
 	$(AM_V_GEN)./extract_interface$(EXEEXT) $(includes) $(srcdir)/all.h \
 	  --language=c++ --output-dir=isl
 
+test-cpp: isl.cpp
+	$(CXX) -c -std=c++11 -I. -I../include/ isl_test.cpp
+
 pkginclude_HEADERS= $(ISL_CXX_H)
 
 java/Manifest.txt:
