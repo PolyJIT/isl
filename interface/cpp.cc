@@ -42,7 +42,7 @@ static IslDepMap IslExtraDeps = {
 	{"isl_id_list", {"isl_id"}},
 	{"isl_val_list", {"isl_val"}},
 	{"isl_multi_val", {"isl_val"}},
-	{"isl_ctx", {"isl_options", "isl_schedule_node"}},
+	{"isl_ctx", {"isl_options"}},
 };
 
 /**
