@@ -1636,7 +1636,6 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		    new cpp_class_printer(clazz, subclass, can_cp, super,
 					  is_inplace(clazz)));
 
-	set<FunctionDecl *>::iterator in;
 	string fileName = includePath + p_name + ".hpp";
 	ostream &os = outputfile(fileName);
 
@@ -1653,10 +1652,9 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 	p->print_api_wrapper(os);
 	p->print_copy_assignment(os);
 
-	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
-	     ++in) {
-		print_constructor_impl(os, clazz, *in);
-	}
+        for (auto &in : clazz.constructors) {
+		print_constructor_impl(os, clazz, in);
+        }
 
 	// We do not free objects of classes that have in-place update
 	// (e.g., isl_band). These values exist only in dependence of
@@ -1700,8 +1698,9 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		      s_name, p_name);
 	}
 
-	for (in = clazz.methods.begin(); in != clazz.methods.end(); ++in)
-		print_method_impl(os, clazz, *in, subclass, super);
+	for (auto &in : clazz.methods) {
+		print_method_impl(os, clazz, in, subclass, super);
+	}
 
 	os << endl;
 	// if (name.compare("isl_val") == 0)
