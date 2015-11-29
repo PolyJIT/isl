@@ -14,10 +14,9 @@
 #define DEBUG(X) \
   do { X; } while (0)
 
-using namespace fmt;
+static const std::string srcPath = "";
+static const std::string includePath = "";
 
-static const string srcPath = "";
-static const string includePath = "";
 typedef std::map<std::string, std::vector<std::string>> IslDepMap;
 static IslDepMap IslExtraDeps = {
 	{"isl_union_map", {"isl_aff", "isl_union_map", "isl_flow"}},
@@ -45,6 +44,9 @@ static IslDepMap IslExtraDeps = {
 	{"isl_multi_val", {"isl_val"}},
 	{"isl_ctx", {"isl_options"}},
 };
+
+using fmt::print;
+using fmt::format;
 
 /**
  * @brief Get the necessary include for an isl object
