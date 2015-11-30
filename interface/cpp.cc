@@ -1470,6 +1470,22 @@ bool cpp_generator::can_copy(isl_class &clazz)
 }
 
 /**
+ * \brief Filter a set of class methods by name, not pointer.
+ *
+ * \param methods A set of methods we want to make unique by name.
+ *
+ * \returns a map from method name to method pointer.
+ */
+static std::map<const llvm::StringRef, clang::FunctionDecl *> make_unique(
+	const std::set<clang::FunctionDecl *> &methods) {
+	std::map<const llvm::StringRef, clang::FunctionDecl *> UniqueFns;
+	for (auto method : methods) {
+		UniqueFns.insert(std::make_pair(method->getName(), method));
+	}
+	return UniqueFns;
+}
+
+/**
  * \brief Print out the definition of this isl_class.
  *
  * We first check if this isl_class is a subclass of some other class.
@@ -1581,8 +1597,9 @@ void cpp_generator::print_class(isl_class &clazz)
 		print(os, "  virtual {0} as{0}() const override;\n", s_name);
 	}
 
-	for (auto method : clazz.methods) {
-		print_method(os, clazz, method, subclass, super);
+	auto MethodsKV = make_unique(clazz.methods);
+        for (auto MethodKV : MethodsKV) {
+		print_method(os, clazz, MethodKV.second, subclass, super);
 	}
 
 	p->print_copy_constructor_h(os);
@@ -1693,8 +1710,9 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		      s_name, p_name);
 	}
 
-	for (auto &in : clazz.methods) {
-		print_method_impl(os, clazz, in, subclass, super);
+	auto MethodsKV = make_unique(clazz.methods);
+	for (auto &MethodKV : MethodsKV) {
+		print_method_impl(os, clazz, MethodKV.second, subclass, super);
 	}
 
 	os << endl;
