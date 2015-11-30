@@ -6,6 +6,8 @@
 #include "isl/Val.hpp"
 #include "isl/MultiVal.hpp"
 #include "isl/IslException.h"
+#include "isl/PwQpolynomial.hpp"
+#include "isl/PwAff.hpp"
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(*array))
 
@@ -24,6 +26,43 @@ static bool test_parse_map_equal(Ctx &C, const char *m1, const char *m2) {
 	Map M1 = Map::readFromStr(C, m1);
 	Map M2 = Map::readFromStr(C, m2);
 	return !M1.isEqual(M2);
+}
+
+/* Inputs for isl_pw_qpolynomial_gist tests.
+ * "pwqp" is the input, "set" is the context and "gist" is the expected result.
+ */
+struct {
+	const char *pwqp;
+	const char *set;
+	const char *gist;
+} pwqp_gist_tests[] = {
+	{ "{ [i] -> i }", "{ [k] : exists a : k = 2a }", "{ [i] -> i }" },
+	{ "{ [i] -> i + [ (i + [i/3])/2 ] }", "{ [10] }", "{ [i] -> 16 }" },
+	{ "{ [i] -> ([(i)/2]) }", "{ [k] : exists a : k = 2a+1 }",
+	  "{ [i] -> -1/2 + 1/2 * i }" },
+	{ "{ [i] -> i^2 : i != 0 }", "{ [i] : i != 0 }", "{ [i] -> i^2 }" },
+};
+
+static int test_pwqp(Ctx &C) {
+  PwQpolynomial PwQp1 = PwQpolynomial::readFromStr(C,
+	"{ [i,j,k] -> 1 + 9 * [i/5] + 7 * [j/11] + 4 * [k/13] }");
+  PwQpolynomial PwQp2 = PwQpolynomial::readFromStr(C,
+	"[j] -> { [i,k] -> 1 + 9 * [i/5] + 7 * [j/11] + 4 * [k/13] }");
+
+  PwQp1.moveDims(DimType::DTParam, 0, DimType::DTIn, 1, 1);
+  PwQp1 = PwQp1.sub(PwQp2);
+  assert(PwQp1.isZero());
+
+  for (int i = 0; i < ARRAY_SIZE(pwqp_gist_tests); ++i) {
+	PwQp1 = PwQpolynomial::readFromStr(C, pwqp_gist_tests[i].pwqp);
+	Set S = Set::readFromStr(C, pwqp_gist_tests[i].set);
+	PwQp1 = PwQp1.gist(S);
+	PwQp2 = PwQpolynomial::readFromStr(C, pwqp_gist_tests[i].gist);
+	PwQp1 = PwQp1.sub(PwQp2);
+	assert(PwQp1.isZero());
+  }
+
+  return 0;
 }
 
 int test_parse(Ctx &C) {
