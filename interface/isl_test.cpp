@@ -4,10 +4,140 @@
 #include "isl/ScheduleNode.hpp"
 #include "isl/MultiUnionPwAff.hpp"
 #include "isl/Val.hpp"
+#include "isl/MultiVal.hpp"
+#include "isl/IslException.h"
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(*array))
 
 using namespace isl;
+
+static int test_parse_multi_val(Ctx &C, const char *str) {
+  try {
+    isl::MultiVal MV = isl::MultiVal::readFromStr(C, str);
+  } catch(IslException ex) {
+    return -1;
+  }
+  return 0;
+}
+
+static bool test_parse_map_equal(Ctx &C, const char *m1, const char *m2) {
+	Map M1 = Map::readFromStr(C, m1);
+	Map M2 = Map::readFromStr(C, m2);
+	return !M1.isEqual(M2);
+}
+
+int test_parse(Ctx &C) {
+  if (test_parse_multi_val(C, "{ A[B[2] -> C[5, 7]] }"))
+    return -1;
+  if (test_parse_multi_val(C, "[n] -> { [2] }"))
+    return -1;
+  if (test_parse_multi_val(C, "{ A[4, infty, NaN, -1/2, 2/3] }"))
+    return -1;
+
+  { Map M = Map::readFromStr(C, "{ [i] -> [-i] }"); }
+  { Map M = Map::readFromStr(C, "{ A[i] -> L[([i/3])] }"); }
+  { Map M = Map::readFromStr(C, "{[[s] -> A[i]] -> [[s+1] -> A[i]]}"); }
+  { Map M = Map::readFromStr(C, "{ [p1, y1, y2] -> [2, y1, y2] : "
+	"p1 = 1 && (y1 <= y2 || y2 = 0) }"); }
+  { Map M = Map::readFromStr(C, ""); }
+
+  assert(test_parse_map_equal(C, "{ [x,y]  : [([x/2]+y)/3] >= 1 }",
+	"{ [x, y] : 2y >= 6 - x }"));
+  assert(test_parse_map_equal(C, "{ [x,y] : x <= min(y, 2*y+3) }",
+	"{ [x,y] : x <= y, 2*y + 3 }"));
+  assert(test_parse_map_equal(C,
+	"{ [x, y] : (y <= x and y >= -3) or (2y <= -3 + x and y <= -4) }",
+	"{ [x,y] : x >= min(y, 2*y+3) }"));
+  assert(test_parse_map_equal(C,
+	"{[new,old] -> [new+1-2*[(new+1)/2],old+1-2*[(old+1)/2]]}",
+	"{ [new, old] -> [o0, o1] : "
+	"exists (e0 = [(-1 - new + o0)/2], e1 = [(-1 - old + o1)/2]: "
+	"2e0 = -1 - new + o0 and 2e1 = -1 - old + o1 and o0 >= 0 and "
+	"o0 <= 1 and o1 >= 0 and o1 <= 1) }"));
+  assert(test_parse_map_equal(C,
+	"{[new,old] -> [new+1-2*[(new+1)/2],old+1-2*[(old+1)/2]]}",
+	"{[new,old] -> [(new+1)%2,(old+1)%2]}"));
+  assert(test_parse_map_equal(C,
+	"[n] -> { [c1] : c1>=0 and c1<=floord(n-4,3) }",
+	"[n] -> { [c1] : c1 >= 0 and 3c1 <= -4 + n }"));
+  assert(test_parse_map_equal(C,
+	"{ [i,j] -> [i] : i < j; [i,j] -> [j] : j <= i }",
+	"{ [i,j] -> [min(i,j)] }"));
+  assert(test_parse_map_equal(C,
+	"{ [i,j] : i != j }",
+	"{ [i,j] : i < j or i > j }"));
+  assert(test_parse_map_equal(C,
+	"{ [i,j] : (i+1)*2 >= j }",
+	"{ [i, j] : j <= 2 + 2i }"));
+  assert(test_parse_map_equal(C,
+	"{ [i] -> [i > 0 ? 4 : 5] }",
+	"{ [i] -> [5] : i <= 0; [i] -> [4] : i >= 1 }"));
+  assert(test_parse_map_equal(C,
+	"[N=2,M] -> { [i=[(M+N)/4]] }",
+	"[N, M] -> { [i] : N = 2 and 4i <= 2 + M and 4i >= -1 + M }"));
+  assert(test_parse_map_equal(C,
+	"{ [x] : x >= 0 }",
+	"{ [x] : x-0 >= 0 }"));
+  assert(test_parse_map_equal(C,
+	"{ [i] : ((i > 10)) }",
+	"{ [i] : i >= 11 }"));
+  assert(test_parse_map_equal(C,
+	"{ [i] -> [0] }",
+	"{ [i] -> [0 * i] }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [b] : (not false) }",
+	"{ [a] -> [b] : true }"));
+  assert(test_parse_map_equal(C,
+	"{ [i] : i/2 <= 5 }",
+	"{ [i] : i <= 10 }"));
+  assert(test_parse_map_equal(C,
+	"{Sym=[n] [i] : i <= n }",
+	"[n] -> { [i] : i <= n }"));
+  assert(test_parse_map_equal(C,
+	"{ [*] }",
+	"{ [a] }"));
+  assert(test_parse_map_equal(C,
+	"{ [i] : 2*floor(i/2) = i }",
+	"{ [i] : exists a : i = 2 a }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [b] : a = 5 implies b = 5 }",
+	"{ [a] -> [b] : a != 5 or b = 5 }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [a - 1 : a > 0] }",
+	"{ [a] -> [a - 1] : a > 0 }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [a - 1 : a > 0; a : a <= 0] }",
+	"{ [a] -> [a - 1] : a > 0; [a] -> [a] : a <= 0 }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [(a) * 2 : a >= 0; 0 : a < 0] }",
+	"{ [a] -> [2a] : a >= 0; [a] -> [0] : a < 0 }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [(a * 2) : a >= 0; 0 : a < 0] }",
+	"{ [a] -> [2a] : a >= 0; [a] -> [0] : a < 0 }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [(a * 2 : a >= 0); 0 : a < 0] }",
+	"{ [a] -> [2a] : a >= 0; [a] -> [0] : a < 0 }"));
+  assert(test_parse_map_equal(C,
+	"{ [a] -> [(a * 2 : a >= 0; 0 : a < 0)] }",
+	"{ [a] -> [2a] : a >= 0; [a] -> [0] : a < 0 }"));
+
+
+  {
+	//test_parse_pwqp(ctx, "{ [i] -> i + [ (i + [i/3])/2 ] }");
+  }
+  {
+	Map M = Map::readFromStr(C,
+		"{ S1[i] -> [([i/10]),i%10] : 0 <= i <= 45 }"); }
+  {
+
+	//test_parse_pwaff(ctx, "{ [i] -> [i + 1] : i > 0; [a] -> [a] : a < 0 }");
+  }
+  {
+//	test_parse_pwqp(ctx, "{ [x] -> ([(x)/2] * [(x)/3]) }");
+  }
+
+  return 0;
+}
 
 void test_set() {
   Ctx C = Ctx::alloc();
