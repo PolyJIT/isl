@@ -1066,6 +1066,10 @@ void cpp_generator::handle_enum_return(ostream &os, const string &res,
 	print(os, "  return ({0}){1};\n", type2cpp(enu.name), res);
 }
 
+static bool can_assign(const clang::QualType &Ty) {
+	return !Ty->isVoidType();
+}
+
 /**
  * \brief Handle all return values and perform necessary checks/conversion.
  *
@@ -1077,6 +1081,9 @@ void cpp_generator::handle_return(ostream &os, FunctionDecl *method,
 	const string &resVar)
 {
 	QualType rettype = method->getReturnType();
+	if (!can_assign(rettype))
+		return;
+
 	string fullname = method->getName();
 	if (is_isl_class(rettype)) {
 		string type = type2cpp(extract_type(method->getReturnType()));
@@ -1255,7 +1262,9 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 				      string)
 {
 	string IslMethod = method->getName();
-	string IslRetType = method->getReturnType().getAsString();
+	string IslRetType = can_assign(method->getReturnType()) ?
+		format("{0} res = ", method->getReturnType().getAsString()) :
+		"";
 	string CxxClass = type2cpp(clazz.name);
 	string CxxMethod = methodname2cpp(clazz, IslMethod);
 	string CxxRetType = rettype2cpp(method);
@@ -1296,7 +1305,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 		  "  // Prepare arguments\n"
 		  "{4}"
 		  "  // Call {6}\n"
-		  "  {5} res = {6}({7}{8});\n"
+		  "  {5} {6}({7}{8});\n"
 		  "  // Handle result argument(s)\n"
 		  "{9}"
 		  "  {11}.unlock();\n"
