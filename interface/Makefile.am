@@ -164,7 +164,10 @@ isl.cpp: extract_interface$(EXEEXT) $(srcdir)/all.h
 	  --language=c++ --output-dir=isl
 
 test-cpp: isl.cpp
-	$(CXX) -c -std=c++11 -I. -I../include/ isl_test.cpp
+	$(CXX) -o $@ -std=c++11 -I. -I../include/ isl_test.cpp \
+	  -L$(top_builddir)/.libs -lisl
+	LD_LIBRARY_PATH=$(top_builddir)/.libs srcdir=$(srcdir) \
+			./$@
 
 pkginclude_HEADERS= $(ISL_CXX_H)
 

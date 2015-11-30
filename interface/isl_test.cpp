@@ -88,3 +88,26 @@ int test_tile(Ctx &C) {
 
   return 0;
 }
+
+struct {
+	const char *name;
+	int (*fn)(isl::Ctx &C);
+} tests [] = {
+	{ "tile", &test_tile }
+};
+
+int main(int argc, char **argv)
+{
+	int i;
+        isl::Ctx C = isl::Ctx::alloc();
+
+	const char * srcdir = getenv("srcdir");
+	assert(srcdir);
+
+	for (i = 0; i < ARRAY_SIZE(tests); ++i) {
+		printf("%s\n", tests[i].name);
+		if (tests[i].fn(C) < 0)
+			return -1;
+	}
+	return 0;
+}
