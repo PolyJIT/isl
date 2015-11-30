@@ -165,6 +165,7 @@ isl.cpp: extract_interface$(EXEEXT) $(srcdir)/all.h
 
 test-cpp: isl.cpp
 	$(CXX) -o $@ -std=c++11 -I. -I../include/ isl_test.cpp \
+	  -fexceptions -g -O0 \
 	  -L$(top_builddir)/.libs -lisl
 	LD_LIBRARY_PATH=$(top_builddir)/.libs srcdir=$(srcdir) \
 			./$@
