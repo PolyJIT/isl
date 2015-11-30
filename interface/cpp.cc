@@ -160,8 +160,6 @@ static const string getForwardDecls(Dependences &Deps)
  */
 static string indent(unsigned depth)
 {
-	assert(depth > 0);
-
 	string indt;
 	while (depth > 0) {
 		indt += " ";
@@ -313,22 +311,6 @@ static void printHandleErrorCall(ostream &os, int level, string &&what,
 		  "{0}  handleError(\"{1}\");\n"
 		  "{0}}}\n",
 	      indent(level), what, context);
-}
-
-/**
- * \brief Print a custom deleter lambda function (cleanup for smart-pointers)
- *
- * \param os
- * \param name
- * \param cname
- */
-static void print_custom_deleter(ostream &os, string name, string cname)
-{
-	print(os, "[=](ptr *{0}) {{\n"
-		  "  {1}_free({0}->p);\n"
-		  "  {0}->p = nullptr;\n"
-		  "}}",
-	      name, cname);
 }
 
 /**
@@ -829,8 +811,6 @@ class context_class_printer : public cpp_class_printer
 	void print_move_constructor_h(ostream &os) override {}
 	void print_move_assignment_h(ostream &os) override {}
 	void print_api_wrapper(ostream &os) override {}
-	//void print_destructor(ostream &os) override {}
-	//void print_destructor_h(ostream &os) override {}
 	void print_print_methods(ostream &os) override {}
 	void print_print_methods_h(ostream &os) override {}
 };
@@ -1219,17 +1199,6 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 		  "  {2} {3}({4}) const;\n",
 	      method->getNameAsString(), comment.str(), CxxRetType, CxxMethod,
 	      get_argument_decl_list(method, 1));
-
-	// if (is_isl_class(method->getReturnType())) {
-	// 	os << endl;
-	// 	print(os, "  ///\brief Generated from:\n"
-	// 		  "  ///       {0}\n"
-	// 		  "{1}"
-	// 		  "  ///\n"
-	// 		  "  void {2}Inplace({3});\n",
-	// 	      method->getNameAsString(), comment.str(), cname,
-	// 	      get_argument_decl_list(method, 1));
-	// }
 }
 
 /**
@@ -1317,28 +1286,6 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 	      IslMethod,
 	      isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
 	      param_os.str(), result_os.str(), return_os.str(), Context);
-
-	// if (is_isl_class(method->getReturnType()) && can_copy(clazz)) {
-	// 	os << endl;
-	// 	print(
-	// 	    os, "/// \brief inplace variant\n"
-	// 		"inline void {1}::{0}Inplace({2}) {{\n"
-	// 		"  {10}.lock();\n"
-	// 		"  // Prepare arguments\n"
-	// 		"{3}"
-	// 		"  // Call {5}\n"
-	// 		"  This = (void *){5}(({4} *)This{7});\n"
-	// 		"  // Handle result argument(s)\n"
-	// 		"{8}"
-	// 		"  {10}.unlock();\n"
-	// 		"{9}"
-	// 		"}}\n",
-	// 	    cname, p_name, get_argument_decl_list(method, 1),
-	// 	    prepare_os.str(), clazz.name, fullname,
-	// 	    isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
-	// 	    param_os.str(), result_os.str(), handle_error_os.str(),
-	// 	    context);
-	// }
 }
 
 /**
