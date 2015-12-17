@@ -414,6 +414,34 @@ static int test_partial_lexmin(Ctx &C)
 	return 0;
 }
 
+/* This is a regression test for a bug where isl_basic_map_simplify
+ * would end up in an infinite loop.  In particular, we construct
+ * an empty basic set that is not obviously empty.
+ * isl_basic_set_is_empty marks the basic set as empty.
+ * After projecting out i3, the variable can be dropped completely,
+ * but isl_basic_map_simplify refrains from doing so if the basic set
+ * is empty and would end up in an infinite loop if it didn't test
+ * explicitly for empty basic maps in the outer loop.
+ */
+static int test_simplify(Ctx &C)
+{
+	int empty;
+
+	BasicSet bset = BasicSet::readFromStr(C,
+	    "{ [i0, i1, i2, i3] : i0 >= -2 and 6i2 <= 4 + i0 + 5i1 and "
+	    "i2 <= 22 and 75i2 <= 111 + 13i0 + 60i1 and "
+	    "25i2 >= 38 + 6i0 + 20i1 and i0 <= -1 and i2 >= 20 and "
+	    "i3 >= i2 }");
+	empty = bset.isEmpty();
+	bset = bset.projectOut(isl::DTSet, 3, 1);
+	if (!bset.Give())
+		return -1;
+	if (!empty)
+		isl_die(C.Get(), isl_error_unknown,
+			"basic set should be empty", return -1);
+
+	return 0;
+}
 
 struct {
 	const char *name;
@@ -426,6 +454,7 @@ struct {
 //    {"tile", &test_tile},
     {"compute divs", &test_compute_divs},
     {"partial lexmin", &test_partial_lexmin},
+    {"simplify", &test_simplify},
 };
 
 int main(int argc, char **argv)
