@@ -352,6 +352,30 @@ static int test_union(Ctx &C)
   return 0;
 }
 
+/* Check that the dependence analysis proceeds without errors.
+ * Earlier versions of isl would break down during the analysis
+ * due to the use of the wrong spaces.
+ */
+static int test_flow(Ctx &C)
+{
+	using UnionMapPtr = std::unique_ptr<UnionMap>;
+	UnionMapPtr must_dep(nullptr);
+	UnionMapPtr may_dep(nullptr);
+	int r;
+
+	UnionMap access = UnionMap::readFromStr(C,
+		"{ S0[j] -> i[]; S1[j,i] -> i[]; S2[] -> i[]; S3[] -> i[] }");
+	UnionMap schedule = UnionMap::readFromStr(C,
+		"{ S0[j] -> [0,j,0,0] : 0 <= j < 10; "
+		  "S1[j,i] -> [0,j,1,i] : 0 <= j < i < 10; "
+		  "S2[] -> [1,0,0,0]; "
+		  "S3[] -> [-1,0,0,0] }");
+	r = access.computeFlow(access, access, schedule, &must_dep, &may_dep,
+			       NULL, NULL);
+	return r;
+}
+
+
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
@@ -359,6 +383,7 @@ struct {
     {"parse", &test_parse},
     {"union", &test_union},
     {"dual", &test_dual},
+    {"dependence analysis", &test_flow},
 //    {"tile", &test_tile},
 };
 
