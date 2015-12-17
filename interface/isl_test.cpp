@@ -1,6 +1,7 @@
 #include "isl/Ctx.hpp"
 #include "isl/Set.hpp"
 #include "isl/UnionSet.hpp"
+#include "isl/UnionMap.hpp"
 #include "isl/ScheduleNode.hpp"
 #include "isl/MultiUnionPwAff.hpp"
 #include "isl/Val.hpp"
@@ -25,7 +26,7 @@ static int test_parse_multi_val(Ctx &C, const char *str) {
 static bool test_parse_map_equal(Ctx &C, const char *m1, const char *m2) {
 	Map M1 = Map::readFromStr(C, m1);
 	Map M2 = Map::readFromStr(C, m2);
-	return !M1.isEqual(M2);
+	return M1.isEqual(M2);
 }
 
 /* Inputs for isl_pw_qpolynomial_gist tests.
@@ -73,12 +74,11 @@ int test_parse(Ctx &C) {
   if (test_parse_multi_val(C, "{ A[4, infty, NaN, -1/2, 2/3] }"))
     return -1;
 
-  { Map M = Map::readFromStr(C, "{ [i] -> [-i] }"); }
-  { Map M = Map::readFromStr(C, "{ A[i] -> L[([i/3])] }"); }
-  { Map M = Map::readFromStr(C, "{[[s] -> A[i]] -> [[s+1] -> A[i]]}"); }
-  { Map M = Map::readFromStr(C, "{ [p1, y1, y2] -> [2, y1, y2] : "
-	"p1 = 1 && (y1 <= y2 || y2 = 0) }"); }
-  { Map M = Map::readFromStr(C, ""); }
+  Map M = Map::readFromStr(C, "{ [i] -> [-i] }");
+  M = Map::readFromStr(C, "{ A[i] -> L[([i/3])] }");
+  M = Map::readFromStr(C, "{[[s] -> A[i]] -> [[s+1] -> A[i]]}");
+  M = Map::readFromStr(C, "{ [p1, y1, y2] -> [2, y1, y2] : "
+	"p1 = 1 && (y1 <= y2 || y2 = 0) }");
 
   assert(test_parse_map_equal(C, "{ [x,y]  : [([x/2]+y)/3] >= 1 }",
 	"{ [x, y] : 2y >= 6 - x }"));
@@ -232,7 +232,8 @@ int test_tile(Ctx &C) {
     UnionSet Domain = UnionSet::readFromStr(C, tile_tests[i].domain);
     ScheduleNode Node = ScheduleNode::fromDomain(Domain);
     Node = Node.child(0);
-    MultiUnionPwAff Mupa = MultiUnionPwAff::readFromStr(C, tile_tests[i].schedule);
+    MultiUnionPwAff Mupa =
+	MultiUnionPwAff::readFromStr(C, tile_tests[i].schedule);
     Node = Node.insertPartialSchedule(Mupa);
     Val Sizes = Val::readFromStr(C, tile_tests[i].sizes);
     Node = Node.bandTile(Sizes);
@@ -258,11 +259,42 @@ int test_tile(Ctx &C) {
   return 0;
 }
 
+static int test_union(Ctx &C)
+{
+  int equal;
+
+  UnionSet uset1 = UnionSet::readFromStr(C, "{ [i] : 0 <= i <= 1 }");
+  UnionMap umap1 = UnionMap::readFromStr(C, "{ [1] -> [0] }");
+  UnionMap umap2 = uset1.lexGtUnionSet(uset1);
+  equal = umap1.isEqual(umap2);
+
+  if (equal < 0)
+    return -1;
+  if (!equal)
+    isl_die(C.Get(), isl_error_unknown, "union maps not equal",
+        return -1);
+
+  umap1 =
+      UnionMap::readFromStr(C, "{ A[i] -> B[i]; B[i] -> C[i]; A[0] -> C[1] }");
+  uset1 = UnionSet::readFromStr(C, "{ A[i]; B[i] }");
+  UnionSet uset2 = umap1.domain();
+  equal = uset1.isEqual(uset2);
+
+  if (equal < 0)
+    return -1;
+  if (!equal)
+    isl_die(C.Get(), isl_error_unknown, "union sets not equal",
+        return -1);
+  return 0;
+}
+
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
 } tests [] = {
-	{ "tile", &test_tile }
+        { "parse", &test_parse },
+        { "union", &test_union },
+	{ "tile", &test_tile },
 };
 
 int main(int argc, char **argv)
