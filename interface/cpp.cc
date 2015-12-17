@@ -391,10 +391,10 @@ class cpp_class_printer
 		print(os, "  Ctx ctx;\n");
 		print(os, "  std::shared_ptr<ptr> This;\n");
 
-		print(os, "  explicit {}(Ctx ctx, "
-			  "std::shared_ptr<ptr> That) : "
-			  "ctx(ctx), This(That) {{}}\n",
-		      p_name);
+		print(os, "  explicit {0}(Ctx ctx, "
+			  "{1} *That) : "
+			  "ctx(ctx), This(std::make_shared<ptr>(That)) {{}}\n",
+		      p_name, name);
 	}
 
       public:
@@ -448,9 +448,9 @@ class cpp_class_printer
 			      "Other.GetCopy()) {{}}\n",
 			      p_name, base_class);
 		else
-			print(os,
-			      "  {0}(const {0} &Other) : {0}(Other.Context(), "
-			      "Other.GetCopy()) {{}}\n",
+			print(os, "  {0}(const {0} &Other) : "
+				  "ctx(Other.Context()), This(Other.GetCopy())"
+				  " {{}}\n",
 			      p_name, base_class);
 	}
 
@@ -501,8 +501,10 @@ class cpp_class_printer
 				  "Other.This) {{}}\n",
 			      p_name, base_class);
 		else
-			print(os, "  {0} ({0} && Other) : {0}(Other.Context(), "
-				  "Other.This) {{}}\n",
+			print(os,
+			      "  {0} ({0} && Other) : ctx(Other.Context()), "
+			      "This(Other.This)"
+			      " {{}}\n",
 			      p_name, base_class);
 	}
 
@@ -1024,7 +1026,7 @@ void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
 
 		print(os, "  if({0}) {{\n", name);
 		printHandleErrorCall(os, 2, name + " became a NULL pointer.");
-		print(os, "    {0} _tmp_{1} = {0} (_{1});\n"
+		print(os, "    {0} _tmp_{1} = {0}(ctx, _{1});\n"
 			  "    {1}->reset(new {0}(_tmp_{1}));\n"
 			  "  }}\n",
 		      cppTyName, name);
@@ -1069,7 +1071,7 @@ void cpp_generator::handle_return(ostream &os, FunctionDecl *method,
 		string type = type2cpp(extract_type(method->getReturnType()));
 		printHandleErrorCall(os, 2,
 				     fullname + " returned a NULL pointer.");
-		print(os, "  return {0}({1});\n", type, resVar);
+		print(os, "  return {0}(ctx, {1});\n", type, resVar);
 	} else if (is_isl_enum(rettype)) {
 		handle_enum_return(os, resVar, find_enum(rettype));
 	} else if (is_bool(method)) {
@@ -1367,7 +1369,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 	if (ContextSource >= 0) {
 		std::string Context =
 		    cons->getParamDecl(ContextSource)->getNameAsString();
-		print(os, "  Ctx _ctx = {0}.Context();\n"
+		print(os, "  const Ctx &_ctx = {0}.Context();\n"
 			  	  "  _ctx.lock();\n",
 			  Context);
 	}
@@ -1508,10 +1510,10 @@ void cpp_generator::print_class(isl_class &clazz)
 	if (!can_cp)
 		print_ptr_wrapper(os, name);
 
-	p->print_explicit_constructors_h(os);
-
 	print(os, "\n");
 	print(os, "public:\n");
+
+	p->print_explicit_constructors_h(os);
 
 	if (!clazz.is_ctx() && !subclass) {
 		print(os, "  const Ctx &Context() const {{ return ctx; }}\n");
@@ -1643,7 +1645,7 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 	os << endl;
 	if (can_cp) {
 		print(os, "inline {0} {0}::as{0}() const {{\n"
-			  "  return {0}(GetCopy());\n"
+			  "  return {0}(ctx, GetCopy());\n"
 			  "}}\n",
 		      p_name);
 	} else {
