@@ -355,11 +355,11 @@ static int test_union(Ctx &C)
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
-	{ "tile", &test_tile },
 } tests[] = {
     {"parse", &test_parse},
     {"union", &test_union},
     {"dual", &test_dual},
+//    {"tile", &test_tile},
 };
 
 int main(int argc, char **argv)
