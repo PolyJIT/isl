@@ -390,6 +390,30 @@ static int test_compute_divs(Ctx &C)
 	return 0;
 }
 
+/* This is a regression test for a bug where isl_tab_basic_map_partial_lexopt
+ * with gbr context would fail to disable the use of the shifted tableau
+ * when transferring equalities for the input to the context, resulting
+ * in invalid sample values.
+ */
+static int test_partial_lexmin(Ctx &C)
+{
+	BasicMap bmap = BasicMap::readFromStr(
+	    C, "{ [1, b, c, 1 - c] -> [e] : 2e <= -c and 2e >= -3 + c }");
+	BasicSet bset = BasicSet::readFromStr(
+	    C, "{ [a, b, c, d] : c <= 1 and 2d >= 6 - 4b - c }");
+
+
+	// Not exported yet.
+	isl_map *map;
+	map = isl_basic_map_partial_lexmin(bmap.Give(), bset.Give(), NULL);
+	isl_map_free(map);
+
+	if (!map)
+		return -1;
+
+	return 0;
+}
+
 
 struct {
 	const char *name;
@@ -401,6 +425,7 @@ struct {
     {"dependence analysis", &test_flow},
 //    {"tile", &test_tile},
     {"compute divs", &test_compute_divs},
+    {"partial lexmin", &test_partial_lexmin},
 };
 
 int main(int argc, char **argv)
