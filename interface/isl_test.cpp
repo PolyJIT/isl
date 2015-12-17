@@ -451,10 +451,10 @@ struct {
     {"union", &test_union},
     {"dual", &test_dual},
     {"dependence analysis", &test_flow},
-//    {"tile", &test_tile},
     {"compute divs", &test_compute_divs},
     {"partial lexmin", &test_partial_lexmin},
     {"simplify", &test_simplify},
+    //    {"tile", &test_tile},
 };
 
 int main(int argc, char **argv)
