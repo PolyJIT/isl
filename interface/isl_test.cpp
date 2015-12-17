@@ -375,6 +375,21 @@ static int test_flow(Ctx &C)
 	return r;
 }
 
+/* Check that the variable compression performed on the existentially
+ * quantified variables inside isl_basic_set_compute_divs is not confused
+ * by the implicit equalities among the parameters.
+ */
+static int test_compute_divs(Ctx &C)
+{
+	BasicSet bset = BasicSet::readFromStr(C,
+		"[a, b, c, d, e] -> { [] : exists (e0: 2d = b and a <= 124 and "
+		"b <= 2046 and b >= 0 and b <= 60 + 64a and 2e >= b + 2c and "
+		"2e >= b and 2e <= 1 + b and 2e <= 1 + b + 2c and "
+		"32768e0 >= -124 + a and 2097152e0 <= 60 + 64a - b) }");
+	Set set = bset.computeDivs();
+	return 0;
+}
+
 
 struct {
 	const char *name;
@@ -385,6 +400,7 @@ struct {
     {"dual", &test_dual},
     {"dependence analysis", &test_flow},
 //    {"tile", &test_tile},
+    {"compute divs", &test_compute_divs},
 };
 
 int main(int argc, char **argv)
