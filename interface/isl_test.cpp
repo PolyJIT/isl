@@ -1,4 +1,5 @@
 #include "isl/Ctx.hpp"
+#include "isl/BasicSet.hpp"
 #include "isl/Set.hpp"
 #include "isl/UnionSet.hpp"
 #include "isl/UnionMap.hpp"
@@ -259,6 +260,69 @@ int test_tile(Ctx &C) {
   return 0;
 }
 
+struct {
+	const char *set;
+	const char *dual;
+} coef_tests[] = {
+	{ "{ rat: [i] : 0 <= i <= 10 }",
+	  "{ rat: coefficients[[cst] -> [a]] : cst >= 0 and 10a + cst >= 0 }" },
+	{ "{ rat: [i] : FALSE }",
+	  "{ rat: coefficients[[cst] -> [a]] }" },
+	{ "{ rat: [i] : }",
+	  "{ rat: coefficients[[cst] -> [0]] : cst >= 0 }" },
+};
+
+struct {
+	const char *set;
+	const char *dual;
+} sol_tests[] = {
+	{ "{ rat: coefficients[[cst] -> [a]] : cst >= 0 and 10a + cst >= 0 }",
+	  "{ rat: [i] : 0 <= i <= 10 }" },
+	{ "{ rat: coefficients[[cst] -> [a]] : FALSE }",
+	  "{ rat: [i] }" },
+	{ "{ rat: coefficients[[cst] -> [a]] }",
+	  "{ rat: [i] : FALSE }" },
+};
+
+/* Test the basic functionality of isl_basic_set_coefficients and
+ * isl_basic_set_solutions.
+ */
+static int test_dual(Ctx &C)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(coef_tests); ++i) {
+		int equal;
+
+		BasicSet bset1 = BasicSet::readFromStr(C, coef_tests[i].set);
+		BasicSet bset2 = BasicSet::readFromStr(C, coef_tests[i].dual);
+		bset1 = bset1.coefficients();
+		equal = bset1.isEqual(bset2);
+		if (equal < 0)
+			return -1;
+		if (!equal)
+			isl_die(C.Get(), isl_error_unknown,
+				"incorrect dual", return -1);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(sol_tests); ++i) {
+		int equal;
+
+		BasicSet bset1 = BasicSet::readFromStr(C, sol_tests[i].set);
+		BasicSet bset2 = BasicSet::readFromStr(C, sol_tests[i].dual);
+		bset1 = bset1.solutions();
+		equal = bset1.isEqual(bset2);
+		if (equal < 0)
+			return -1;
+		if (!equal)
+			isl_die(C.Get(), isl_error_unknown,
+				"incorrect dual", return -1);
+	}
+
+	return 0;
+}
+
+
 static int test_union(Ctx &C)
 {
   int equal;
@@ -291,10 +355,11 @@ static int test_union(Ctx &C)
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
-} tests [] = {
-        { "parse", &test_parse },
-        { "union", &test_union },
 	{ "tile", &test_tile },
+} tests[] = {
+    {"parse", &test_parse},
+    {"union", &test_union},
+    {"dual", &test_dual},
 };
 
 int main(int argc, char **argv)
