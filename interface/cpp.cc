@@ -1648,7 +1648,7 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		      p_name);
 	} else {
 		print(os, "inline {0} {0}::as{0}() const {{\n"
-			  "  return *const_cast<{0} *>(this);\n"
+			  "  return *this;\n"
 			  "}}\n",
 		      p_name);
 	}
