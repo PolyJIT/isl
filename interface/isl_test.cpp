@@ -10,6 +10,7 @@
 #include "isl/IslException.h"
 #include "isl/PwQpolynomial.hpp"
 #include "isl/PwAff.hpp"
+#include "isl/PwMultiAff.hpp"
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(*array))
 
@@ -463,6 +464,35 @@ static int test_curry(Ctx &C)
 	return 0;
 }
 
+/* Check if dropping output dimensions from an isl_pw_multi_aff
+ * works properly.
+ */
+static int test_pw_multi_aff(Ctx &C)
+{
+	const char *str;
+	isl_pw_multi_aff *pma1, *pma2;
+	int equal;
+
+	str = "{ [i,j] -> [i+j, 4i-j] }";
+	pma1 = isl_pw_multi_aff_read_from_str(C.Get(), str);
+	str = "{ [i,j] -> [4i-j] }";
+	pma2 = isl_pw_multi_aff_read_from_str(C.Get(), str);
+
+	PwMultiAff PMA1 = PwMultiAff(C, pma1);
+	PwMultiAff PMA2 = PwMultiAff(C, pma2);
+
+	PMA1 = PMA1.dropDims(isl::DTOut, 0, 1);
+	equal = PMA1.plainIsEqual(PMA2);
+
+	if (equal < 0)
+		return -1;
+	if (!equal)
+		isl_die(C.Get(), isl_error_unknown,
+			"expressions not equal", return -1);
+
+	return 0;
+}
+
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
@@ -474,6 +504,7 @@ struct {
     {"partial lexmin", &test_partial_lexmin},
     {"simplify", &test_simplify},
     {"curry", &test_curry},
+    {"piecewise multi affine expressions", &test_pw_multi_aff},
     {"compute divs", &test_compute_divs},
     //    {"tile", &test_tile},
 };
