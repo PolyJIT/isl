@@ -471,10 +471,10 @@ struct {
     {"union", &test_union},
     {"dual", &test_dual},
     {"dependence analysis", &test_flow},
-    {"compute divs", &test_compute_divs},
     {"partial lexmin", &test_partial_lexmin},
     {"simplify", &test_simplify},
     {"curry", &test_curry},
+    {"compute divs", &test_compute_divs},
     //    {"tile", &test_tile},
 };
 
