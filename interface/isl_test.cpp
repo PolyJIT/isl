@@ -7,6 +7,8 @@
 #include "isl/MultiUnionPwAff.hpp"
 #include "isl/Val.hpp"
 #include "isl/MultiVal.hpp"
+#include "isl/Id.hpp"
+#include "isl/IdList.hpp"
 #include "isl/IslException.h"
 #include "isl/PwQpolynomial.hpp"
 #include "isl/PwAff.hpp"
@@ -628,6 +630,41 @@ static int test_map_conversion(Ctx &C)
 	return 0;
 }
 
+static int test_list(Ctx &C)
+{
+	int ok;
+
+	Id a = Id::alloc(C, "a", nullptr);
+	Id b = Id::alloc(C, "b", nullptr);
+	Id c = Id::alloc(C, "c", nullptr);
+	Id d = Id::alloc(C, "d", nullptr);
+
+	IdList list = IdList::alloc(C, 4);
+
+	list.add(a);
+	list.add(b);
+	list.add(c);
+	list.add(d);
+	list = IdList(C, isl_id_list_drop(list.Give(), 1, 1));
+
+	if (isl_id_list_n_id(list.Get()) != 3) {
+		isl_die(C.Get(), isl_error_unknown,
+			"unexpected number of elements in list", return -1);
+	}
+
+	Id id = Id(C, isl_id_list_get_id(list.Get(), 0));
+	ok = id.Get() == a.Get();
+
+	id = Id(C, isl_id_list_get_id(list.Get(), 1));
+	ok = ok && id.Get()  == c.Get();
+
+	id = Id(C, isl_id_list_get_id(list.Get(), 2));
+	ok = ok && id.Get() == d.Get();
+
+	if (!ok)
+		isl_die(C.Get(), isl_error_unknown,
+			"unexpected elements in list", return -1);
+
 	return 0;
 }
 
@@ -653,6 +690,7 @@ struct {
     {"curry", &test_curry},
     {"piecewise multi affine expressions", &test_pw_multi_aff},
     {"multi piecewise affine expressions", &test_multi_pw_aff},
+    {"list", &test_list},
     {"conversion", &test_conversion},
     {"compute divs", &test_compute_divs},
     //    {"tile", &test_tile},
