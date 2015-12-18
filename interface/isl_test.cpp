@@ -443,6 +443,26 @@ static int test_simplify(Ctx &C)
 	return 0;
 }
 
+/* Check that isl_basic_map_curry does not modify input.
+ */
+static int test_curry(Ctx &C)
+{
+	int equal;
+
+	BasicMap bmap1 = BasicMap::readFromStr(C, "{ [A[] -> B[]] -> C[] }");
+	BasicMap bmap2 = bmap1.curry();
+	equal = bmap1.isEqual(bmap2);
+
+	if (equal < 0)
+		return -1;
+	if (equal)
+		isl_die(C.Get(), isl_error_unknown,
+			"curried map should not be equal to original",
+			return -1);
+
+	return 0;
+}
+
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
@@ -454,6 +474,7 @@ struct {
     {"compute divs", &test_compute_divs},
     {"partial lexmin", &test_partial_lexmin},
     {"simplify", &test_simplify},
+    {"curry", &test_curry},
     //    {"tile", &test_tile},
 };
 
