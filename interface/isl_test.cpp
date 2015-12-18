@@ -28,7 +28,7 @@ static int test_parse_multi_val(Ctx &C, const char *str) {
 static bool test_parse_map_equal(Ctx &C, const char *m1, const char *m2) {
 	Map M1 = Map::readFromStr(C, m1);
 	Map M2 = Map::readFromStr(C, m2);
-	return M1.isEqual(M2);
+	return M1.isEqual(M2) == Bool::True;
 }
 
 /* Inputs for isl_pw_qpolynomial_gist tests.
@@ -52,9 +52,9 @@ static int test_pwqp(Ctx &C) {
   PwQpolynomial PwQp2 = PwQpolynomial::readFromStr(C,
 	"[j] -> { [i,k] -> 1 + 9 * [i/5] + 7 * [j/11] + 4 * [k/13] }");
 
-  PwQp1.moveDims(DimType::DTParam, 0, DimType::DTIn, 1, 1);
+  PwQp1.moveDims(DimType::Param, 0, DimType::In, 1, 1);
   PwQp1 = PwQp1.sub(PwQp2);
-  assert(PwQp1.isZero());
+  assert(PwQp1.isZero() == Bool::True);
 
   for (int i = 0; i < ARRAY_SIZE(pwqp_gist_tests); ++i) {
 	PwQp1 = PwQpolynomial::readFromStr(C, pwqp_gist_tests[i].pwqp);
@@ -62,7 +62,7 @@ static int test_pwqp(Ctx &C) {
 	PwQp1 = PwQp1.gist(S);
 	PwQp2 = PwQpolynomial::readFromStr(C, pwqp_gist_tests[i].gist);
 	PwQp1 = PwQp1.sub(PwQp2);
-	assert(PwQp1.isZero());
+	assert(PwQp1.isZero() == Bool::True);
   }
 
   return 0;
@@ -223,42 +223,48 @@ struct {
 	},
 };
 
-int test_tile(Ctx &C) {
-  int scale = C.getTileScaleTileLoops();
-  int shift = C.getTileShiftPointLoops();
+int test_tile(Ctx &C)
+{
+	int scale = C.getTileScaleTileLoops();
+	int shift = C.getTileShiftPointLoops();
 
-  for (int i = 0; i < ARRAY_SIZE(tile_tests); ++i) {
-    C.setTileScaleTileLoops(tile_tests[i].scale_tile);
-    C.setTileShiftPointLoops(tile_tests[i].shift_point);
+	for (int i = 0; i < ARRAY_SIZE(tile_tests); ++i) {
+		C.setTileScaleTileLoops(tile_tests[i].scale_tile);
+		C.setTileShiftPointLoops(tile_tests[i].shift_point);
 
-    UnionSet Domain = UnionSet::readFromStr(C, tile_tests[i].domain);
-    ScheduleNode Node = ScheduleNode::fromDomain(Domain);
-    Node = Node.child(0);
-    MultiUnionPwAff Mupa =
-	MultiUnionPwAff::readFromStr(C, tile_tests[i].schedule);
-    Node = Node.insertPartialSchedule(Mupa);
-    Val Sizes = Val::readFromStr(C, tile_tests[i].sizes);
-    Node = Node.bandTile(Sizes);
+		UnionSet Domain =
+		    UnionSet::readFromStr(C, tile_tests[i].domain);
+		ScheduleNode Node = ScheduleNode::fromDomain(Domain);
+		Node = Node.child(0);
+		MultiUnionPwAff Mupa =
+		    MultiUnionPwAff::readFromStr(C, tile_tests[i].schedule);
+		Node = Node.insertPartialSchedule(Mupa);
+		Val Sizes = Val::readFromStr(C, tile_tests[i].sizes);
+		Node = Node.bandTile(Sizes);
 
-    Mupa = MultiUnionPwAff::readFromStr(C, tile_tests[i].tile);
-    MultiUnionPwAff Mupa2 = Node.bandGetPartialSchedule();
-    int equal = Mupa.plainIsEqual(Mupa2);
+		Mupa = MultiUnionPwAff::readFromStr(C, tile_tests[i].tile);
+		MultiUnionPwAff Mupa2 = Node.bandGetPartialSchedule();
+		Bool equal = Mupa.plainIsEqual(Mupa2);
 
-    Node = Node.child(0);
-    Mupa = MultiUnionPwAff::readFromStr(C, tile_tests[i].point);
-    Mupa2 = Node.bandGetPartialSchedule();
-    if (equal >= 0 && equal)
-    	equal = Mupa.plainIsEqual(Mupa2);
-    if (equal < 0)
-    	return -1;
-    if (!equal)
-    	isl_die(C.Get(), isl_error_unknown, "unexpected result", return -1);
-  }
+		Node = Node.child(0);
+		Mupa = MultiUnionPwAff::readFromStr(C, tile_tests[i].point);
+		Mupa2 = Node.bandGetPartialSchedule();
 
-  C.setTileScaleTileLoops(scale);
-  C.setTileShiftPointLoops(shift);
+		switch (equal) {
+		case Bool::True:
+			equal = Mupa.plainIsEqual(Mupa2);
+		case Bool::Error:
+			return -1;
+		case Bool::False:
+			isl_die(C.Get(), isl_error_unknown, "unexpected result",
+				return -1);
+		}
+	}
 
-  return 0;
+	C.setTileScaleTileLoops(scale);
+	C.setTileShiftPointLoops(shift);
+
+	return 0;
 }
 
 struct {
@@ -293,29 +299,29 @@ static int test_dual(Ctx &C)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(coef_tests); ++i) {
-		int equal;
+		Bool equal;
 
 		BasicSet bset1 = BasicSet::readFromStr(C, coef_tests[i].set);
 		BasicSet bset2 = BasicSet::readFromStr(C, coef_tests[i].dual);
 		bset1 = bset1.coefficients();
 		equal = bset1.isEqual(bset2);
-		if (equal < 0)
+		if (equal == Bool::Error)
 			return -1;
-		if (!equal)
+		if (!(equal == Bool::True))
 			isl_die(C.Get(), isl_error_unknown,
 				"incorrect dual", return -1);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(sol_tests); ++i) {
-		int equal;
+		Bool equal;
 
 		BasicSet bset1 = BasicSet::readFromStr(C, sol_tests[i].set);
 		BasicSet bset2 = BasicSet::readFromStr(C, sol_tests[i].dual);
 		bset1 = bset1.solutions();
 		equal = bset1.isEqual(bset2);
-		if (equal < 0)
+		if (equal == Bool::Error)
 			return -1;
-		if (!equal)
+		if (!(equal == Bool::True))
 			isl_die(C.Get(), isl_error_unknown,
 				"incorrect dual", return -1);
 	}
@@ -323,34 +329,41 @@ static int test_dual(Ctx &C)
 	return 0;
 }
 
-
 static int test_union(Ctx &C)
 {
-  int equal;
+	Bool equal;
 
-  UnionSet uset1 = UnionSet::readFromStr(C, "{ [i] : 0 <= i <= 1 }");
-  UnionMap umap1 = UnionMap::readFromStr(C, "{ [1] -> [0] }");
-  UnionMap umap2 = uset1.lexGtUnionSet(uset1);
-  equal = umap1.isEqual(umap2);
+	UnionSet uset1 = UnionSet::readFromStr(C, "{ [i] : 0 <= i <= 1 }");
+	UnionMap umap1 = UnionMap::readFromStr(C, "{ [1] -> [0] }");
+	UnionMap umap2 = uset1.lexGtUnionSet(uset1);
+	equal = umap1.isEqual(umap2);
 
-  if (equal < 0)
-    return -1;
-  if (!equal)
-    isl_die(C.Get(), isl_error_unknown, "union maps not equal",
-        return -1);
+	switch (equal) {
+	case Bool::Error:
+		return -1;
+	case Bool::False:
+		isl_die(C.Get(), isl_error_unknown, "union maps not equal",
+			return -1);
+	default:
+		break;
+	}
 
-  umap1 =
-      UnionMap::readFromStr(C, "{ A[i] -> B[i]; B[i] -> C[i]; A[0] -> C[1] }");
-  uset1 = UnionSet::readFromStr(C, "{ A[i]; B[i] }");
-  UnionSet uset2 = umap1.domain();
-  equal = uset1.isEqual(uset2);
+	umap1 = UnionMap::readFromStr(
+	    C, "{ A[i] -> B[i]; B[i] -> C[i]; A[0] -> C[1] }");
+	uset1 = UnionSet::readFromStr(C, "{ A[i]; B[i] }");
+	UnionSet uset2 = umap1.domain();
+	equal = uset1.isEqual(uset2);
 
-  if (equal < 0)
-    return -1;
-  if (!equal)
-    isl_die(C.Get(), isl_error_unknown, "union sets not equal",
-        return -1);
-  return 0;
+	switch (equal) {
+	case Bool::Error:
+		return -1;
+	case Bool::False:
+		isl_die(C.Get(), isl_error_unknown, "union maps not equal",
+			return -1);
+	default:
+		break;
+	}
+	return 0;
 }
 
 /* Check that the dependence analysis proceeds without errors.
@@ -426,7 +439,7 @@ static int test_partial_lexmin(Ctx &C)
  */
 static int test_simplify(Ctx &C)
 {
-	int empty;
+	Bool empty;
 
 	BasicSet bset = BasicSet::readFromStr(C,
 	    "{ [i0, i1, i2, i3] : i0 >= -2 and 6i2 <= 4 + i0 + 5i1 and "
@@ -434,10 +447,10 @@ static int test_simplify(Ctx &C)
 	    "25i2 >= 38 + 6i0 + 20i1 and i0 <= -1 and i2 >= 20 and "
 	    "i3 >= i2 }");
 	empty = bset.isEmpty();
-	bset = bset.projectOut(isl::DTSet, 3, 1);
+	bset = bset.projectOut(DimType::Set, 3, 1);
 	if (!bset.Give())
 		return -1;
-	if (!empty)
+	if (empty == Bool::False)
 		isl_die(C.Get(), isl_error_unknown,
 			"basic set should be empty", return -1);
 
@@ -448,20 +461,22 @@ static int test_simplify(Ctx &C)
  */
 static int test_curry(Ctx &C)
 {
-	int equal;
+	Bool equal;
 
 	BasicMap bmap1 = BasicMap::readFromStr(C, "{ [A[] -> B[]] -> C[] }");
 	BasicMap bmap2 = bmap1.curry();
 	equal = bmap1.isEqual(bmap2);
 
-	if (equal < 0)
+	switch (equal) {
+	case Bool::Error:
 		return -1;
-	if (equal)
+	case Bool::True:
 		isl_die(C.Get(), isl_error_unknown,
 			"curried map should not be equal to original",
 			return -1);
-
-	return 0;
+	default:
+		return 0;
+	}
 }
 
 /* Check if dropping output dimensions from an isl_pw_multi_aff
@@ -471,7 +486,7 @@ static int test_pw_multi_aff(Ctx &C)
 {
 	const char *str;
 	isl_pw_multi_aff *pma1, *pma2;
-	int equal;
+	Bool equal;
 
 	str = "{ [i,j] -> [i+j, 4i-j] }";
 	pma1 = isl_pw_multi_aff_read_from_str(C.Get(), str);
@@ -481,16 +496,18 @@ static int test_pw_multi_aff(Ctx &C)
 	PwMultiAff PMA1 = PwMultiAff(C, pma1);
 	PwMultiAff PMA2 = PwMultiAff(C, pma2);
 
-	PMA1 = PMA1.dropDims(isl::DTOut, 0, 1);
+	PMA1 = PMA1.dropDims(DimType::Out, 0, 1);
 	equal = PMA1.plainIsEqual(PMA2);
 
-	if (equal < 0)
+	switch (equal) {
+	case Bool::Error:
 		return -1;
-	if (!equal)
-		isl_die(C.Get(), isl_error_unknown,
-			"expressions not equal", return -1);
-
-	return 0;
+	case Bool::False:
+		isl_die(C.Get(), isl_error_unknown, "expressions not equal",
+			return -1);
+	default:
+		return 0;
+	}
 }
 
 /* Check that we can properly parse multi piecewise affine expressions
@@ -498,8 +515,8 @@ static int test_pw_multi_aff(Ctx &C)
  */
 static int test_multi_pw_aff(Ctx &C)
 {
-	int equal;
-	int equal_domain;
+	Bool equal;
+	Bool equal_domain;
 
 	MultiPwAff MPA1 = MultiPwAff(
 	    C, isl_multi_pw_aff_read_from_str(C.Get(), "{ [i] -> [i] }"));
@@ -521,17 +538,25 @@ static int test_multi_pw_aff(Ctx &C)
 	Set dom2 = pa.domain();
 	equal_domain = dom.isEqual(dom2);
 
-	if (equal < 0)
+	switch (equal) {
+	case Bool::Error:
 		return -1;
-	if (!equal)
-		isl_die(C.Get(), isl_error_unknown,
-			"expressions not equal", return -1);
+	case Bool::False:
+		isl_die(C.Get(), isl_error_unknown, "expressions not equal",
+			return -1);
+	default:
+		break;
+	}
 
-	if (equal_domain < 0)
+	switch (equal_domain) {
+	case Bool::Error:
 		return -1;
-	if (equal_domain)
+	case Bool::True:
 		isl_die(C.Get(), isl_error_unknown,
 			"domains unexpectedly equal", return -1);
+	default:
+		break;
+	}
 
 	return 0;
 }
@@ -550,7 +575,7 @@ const char *set_conversion_tests[] = {
 static int test_set_conversion(Ctx &C)
 {
 	int i;
-	int equal;
+	Bool equal;
 
 	for (i = 0; i < ARRAY_SIZE(set_conversion_tests); ++i) {
 		Set set1 = Set::readFromStr(C, set_conversion_tests[i]);
@@ -559,11 +584,15 @@ static int test_set_conversion(Ctx &C)
 		Set set2 = Set(C, isl_set_from_pw_multi_aff(pma.Give()));
 		equal = set1.isEqual(set2);
 
-		if (equal < 0)
+		switch (equal) {
+		case Bool::Error:
 			return -1;
-		if (!equal)
+		case Bool::False:
 			isl_die(C.Get(), isl_error_unknown, "bad conversion",
 				return -1);
+		default:
+			break;
+		}
 	}
 
 	return 0;
@@ -574,7 +603,7 @@ static int test_set_conversion(Ctx &C)
  */
 static int test_map_conversion(Ctx &C)
 {
-	int equal;
+	Bool equal;
 
 	Map map1 = Map::readFromStr(C, "{ [a, b, c, d] -> s0[a, b, e, f] : "
 		"exists (e0 = [(a - 2c)/3], e1 = [(-4 + b - 5d)/9], "
@@ -586,11 +615,18 @@ static int test_map_conversion(Ctx &C)
 	Map map2 = Map(C, isl_map_from_pw_multi_aff(pma.Give()));
 	equal = map1.isEqual(map2);
 
-	if (equal < 0)
+	switch (equal) {
+	case Bool::Error:
 		return -1;
-	if (!equal)
+	case Bool::False:
 		isl_die(C.Get(), isl_error_unknown, "bad conversion",
 			return -1);
+	default:
+		break;
+	}
+
+	return 0;
+}
 
 	return 0;
 }
