@@ -493,6 +493,49 @@ static int test_pw_multi_aff(Ctx &C)
 	return 0;
 }
 
+/* Check that we can properly parse multi piecewise affine expressions
+ * where the piecewise affine expressions have different domains.
+ */
+static int test_multi_pw_aff(Ctx &C)
+{
+	int equal;
+	int equal_domain;
+
+	MultiPwAff MPA1 = MultiPwAff(
+	    C, isl_multi_pw_aff_read_from_str(C.Get(), "{ [i] -> [i] }"));
+	Set dom = Set::readFromStr(C, "{ [i] : i > 0 }");
+	MPA1 = MultiPwAff(
+	    C, isl_multi_pw_aff_intersect_domain(MPA1.Give(), dom.Give()));
+	MultiPwAff MPA2 = MultiPwAff(
+	    C, isl_multi_pw_aff_read_from_str(C.Get(), "{ [i] -> [2i] }"));
+	MPA2 = MultiPwAff(
+	    C, isl_multi_pw_aff_flat_range_product(MPA1.Give(), MPA2.Give()));
+	MPA1 = MultiPwAff(C, isl_multi_pw_aff_read_from_str(
+				 C.Get(), "{ [i] -> [(i : i > 0), 2i] }"));
+
+	equal = MPA1.plainIsEqual(MPA2);
+
+	PwAff pa = PwAff(C, isl_multi_pw_aff_get_pw_aff(MPA1.Get(), 0));
+	dom = pa.domain();
+	pa = PwAff(C, isl_multi_pw_aff_get_pw_aff(MPA1.Get(), 1));
+	Set dom2 = pa.domain();
+	equal_domain = dom.isEqual(dom2);
+
+	if (equal < 0)
+		return -1;
+	if (!equal)
+		isl_die(C.Get(), isl_error_unknown,
+			"expressions not equal", return -1);
+
+	if (equal_domain < 0)
+		return -1;
+	if (equal_domain)
+		isl_die(C.Get(), isl_error_unknown,
+			"domains unexpectedly equal", return -1);
+
+	return 0;
+}
+
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
@@ -505,6 +548,7 @@ struct {
     {"simplify", &test_simplify},
     {"curry", &test_curry},
     {"piecewise multi affine expressions", &test_pw_multi_aff},
+    {"multi piecewise affine expressions", &test_multi_pw_aff},
     {"compute divs", &test_compute_divs},
     //    {"tile", &test_tile},
 };
