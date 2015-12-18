@@ -536,6 +536,74 @@ static int test_multi_pw_aff(Ctx &C)
 	return 0;
 }
 
+const char *set_conversion_tests[] = {
+	"[N] -> { [i] : N - 1 <= 2 i <= N }",
+	"[N] -> { [i] : exists a : i = 4 a and N - 1 <= i <= N }",
+	"[N] -> { [i,j] : exists a : i = 4 a and N - 1 <= i, 2j <= N }",
+	"[N] -> { [[i]->[j]] : exists a : i = 4 a and N - 1 <= i, 2j <= N }",
+	"[N] -> { [3*floor(N/2) + 5*floor(N/3)] }",
+};
+
+/* Check that converting from isl_set to isl_pw_multi_aff and back
+ * to isl_set produces the original isl_set.
+ */
+static int test_set_conversion(Ctx &C)
+{
+	int i;
+	int equal;
+
+	for (i = 0; i < ARRAY_SIZE(set_conversion_tests); ++i) {
+		Set set1 = Set::readFromStr(C, set_conversion_tests[i]);
+		PwMultiAff pma =
+		    PwMultiAff(C, isl_pw_multi_aff_from_set(set1.GetCopy()));
+		Set set2 = Set(C, isl_set_from_pw_multi_aff(pma.Give()));
+		equal = set1.isEqual(set2);
+
+		if (equal < 0)
+			return -1;
+		if (!equal)
+			isl_die(C.Get(), isl_error_unknown, "bad conversion",
+				return -1);
+	}
+
+	return 0;
+}
+
+/* Check that converting from isl_map to isl_pw_multi_aff and back
+ * to isl_map produces the original isl_map.
+ */
+static int test_map_conversion(Ctx &C)
+{
+	int equal;
+
+	Map map1 = Map::readFromStr(C, "{ [a, b, c, d] -> s0[a, b, e, f] : "
+		"exists (e0 = [(a - 2c)/3], e1 = [(-4 + b - 5d)/9], "
+		"e2 = [(-d + f)/9]: 3e0 = a - 2c and 9e1 = -4 + b - 5d and "
+		"9e2 = -d + f and f >= 0 and f <= 8 and 9e >= -5 - 2a and "
+		"9e <= -2 - 2a) }");
+	PwMultiAff pma =
+	    PwMultiAff(C, isl_pw_multi_aff_from_map(map1.GetCopy()));
+	Map map2 = Map(C, isl_map_from_pw_multi_aff(pma.Give()));
+	equal = map1.isEqual(map2);
+
+	if (equal < 0)
+		return -1;
+	if (!equal)
+		isl_die(C.Get(), isl_error_unknown, "bad conversion",
+			return -1);
+
+	return 0;
+}
+
+static int test_conversion(Ctx &C)
+{
+	if (test_set_conversion(C) < 0)
+		return -1;
+	if (test_map_conversion(C) < 0)
+		return -1;
+	return 0;
+}
+
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
@@ -549,6 +617,7 @@ struct {
     {"curry", &test_curry},
     {"piecewise multi affine expressions", &test_pw_multi_aff},
     {"multi piecewise affine expressions", &test_multi_pw_aff},
+    {"conversion", &test_conversion},
     {"compute divs", &test_compute_divs},
     //    {"tile", &test_tile},
 };
