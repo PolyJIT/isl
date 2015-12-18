@@ -230,31 +230,6 @@ static string name2camelcase(const string &name, bool startUpper)
 }
 
 /**
- * \brief Return the initials of the name.
- *
- * Initials is a substring of name, containing only upper case letters.
- * Example:
- *  PwAff -> PA
- *
- * \param name the name to get the initials from.
- *
- * @return the initials of the name.
- */
-static string name2initials(const string &name)
-{
-	string cCname = name2camelcase(name, true);
-	string iname;
-
-	for (string::const_iterator it = cCname.begin(); it != cCname.end();
-	     ++it) {
-		char c = *it;
-		if (isupper(c))
-			iname += c;
-	}
-	return iname;
-}
-
-/**
  * \brief Convert an enum name to a cpp-compatible type name.
  *
  * We cut of the isl_ prefix and convert the rest to a camel-case name.
@@ -1849,11 +1824,11 @@ void cpp_generator::print_enum(const isl_enum &enu)
 
 	os << getGuardHeader(e_name);
 	print(os, "namespace isl {{\n"
-		  "enum {0} {{\n",
+		  "enum class {0} {{\n",
 	      e_name);
 
 	for (auto EnumValue : enu.values) {
-		print(os, "  {0}{1} = {2},\n", name2initials(e_name),
+		print(os, "  {0} = {1},\n",
 		      enumval2cpp(EnumValue.first), EnumValue.second);
 	}
 	print(os, "}};\n"
