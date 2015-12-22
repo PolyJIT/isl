@@ -49,6 +49,9 @@ struct isl_enum {
 	string name_without_enum(const string &valname) const;
 };
 
+using SuperClassMap = map<string, vector<string>>;
+using ClassMap = map<string, isl_class>;
+
 /* Base class for interface generators.
  */
 class generator {
@@ -59,8 +62,9 @@ private:
 	map<string,ostringstream*> files;
 
 protected:
-	map<string,isl_class> classes;
+	ClassMap classes;
 	map<string,isl_enum>  enums;
+	SuperClassMap super_to_subclass;
 
 public:
 	generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
@@ -88,8 +92,7 @@ protected:
 	bool is_bool(const Decl *decl);
 	bool takes(Decl *decl);
 	bool gives(Decl *decl);
-	isl_class &method2class(map<string, isl_class> &classes,
-				FunctionDecl *fd);
+	isl_class &method2class(ClassMap &classes, FunctionDecl *fd);
 	bool is_isl_ctx(QualType type);
 	bool first_arg_is_isl_ctx(FunctionDecl *fd);
 	bool is_isl_type(QualType type);
@@ -112,6 +115,9 @@ protected:
 	 */
 	bool is_inplace(const isl_class &clazz) const;
 	int find_context_source(FunctionDecl *method);
+
+	void build_inheritance_map(ClassMap &classes,
+				   SuperClassMap &inheritance_map);
 };
 
 #endif

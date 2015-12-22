@@ -1516,6 +1516,9 @@ void cpp_generator::print_class(isl_class &clazz)
 	//if (can_be_printed(clazz)) {
 	//	p->print_print_methods_h(os);
 	//}
+	for (auto &subclass : super_to_subclass[name]) {
+		os << endl;
+		print(os, "  {0}({1}) {}\n", name, subclass);
 	}
 
 	// Print conversion functions for every super class.
