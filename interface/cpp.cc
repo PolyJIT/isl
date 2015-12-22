@@ -531,26 +531,26 @@ class cpp_class_printer
 	virtual void print_api_wrapper_h(ostream &os)
 	{
 		// 1. Wrap an isl_* object.
-		print(os,
-		      "  ///\brief Wrap an existing isl object.\n"
-		      "  ///\n"
-		      "  /// This serves as an entry point into the C++ API.\n"
-		      "  /// We take ownership of the isl object.\n"
-		      "  ///\n"
-		      "  /// \\param That the {0} we want to wrap.\n"
-		      "  explicit {1}({0} *That) : ", name, p_name);
+	//	print(os,
+	//	      "  ///\brief Wrap an existing isl object.\n"
+	//	      "  ///\n"
+	//	      "  /// This serves as an entry point into the C++ API.\n"
+	//	      "  /// We take ownership of the isl object.\n"
+	//	      "  ///\n"
+	//	      "  /// \\param That the {0} we want to wrap.\n"
+	//	      "  explicit {1}({0} *That) : ", name, p_name);
 
-		print(os,
-		      "{1}(Ctx({0}_get_ctx(That)), ",
-		      name, p_name);
+	//	print(os,
+	//	      "{1}(Ctx({0}_get_ctx(That)), ",
+	//	      name, p_name);
 
 		if (can_copy) {
-			print(os, "That) {{}}\n");
+			//print(os, "That) {{}}\n");
 			print(os, "  {0} *GetCopy() const;\n", name);
 		} else {
-			print(os,
-			      "std::make_shared<isl::{0}::ptr>(That)) {{}}\n",
-			      p_name);
+			//print(os,
+			//      "std::make_shared<isl::{0}::ptr>(That)) {{}}\n",
+			//      p_name);
 			print(os, "  std::shared_ptr<isl::{0}::ptr> GetCopy() "
 				  "const;\n",
 			      p_name);
@@ -1513,8 +1513,9 @@ void cpp_generator::print_class(isl_class &clazz)
 	p->print_destructor_h(os);
 	p->print_extra_methods_h(os);
 
-	if (can_be_printed(clazz)) {
-		p->print_print_methods_h(os);
+	//if (can_be_printed(clazz)) {
+	//	p->print_print_methods_h(os);
+	//}
 	}
 
 	// Print conversion functions for every super class.
@@ -1612,9 +1613,9 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 	p->print_api_give(os);
 	p->print_api_unwrapper(os);
 
-	if (can_be_printed(clazz)) {
-		p->print_print_methods(os);
-	}
+	//if (can_be_printed(clazz)) {
+	//	p->print_print_methods(os);
+	//}
 
 	// Print conversion functions for every super class.
 	os << endl;
@@ -1666,6 +1667,8 @@ void cpp_generator::generateClasses()
 
 	map<string, isl_class>::iterator ci;
 	for (ci = classes.begin(); ci != classes.end(); ++ci) {
+		if (ci->first == "isl_printer")
+			continue;
 		print_class(ci->second);
 		print_class_impl(ci->second);
 	}
@@ -1742,8 +1745,8 @@ Dependences cpp_generator::getDependences(isl_class &clazz)
 	Dependences Deps;
 	set<clang::FunctionDecl *>::iterator it, ie;
 
-	if (can_be_printed(clazz))
-		Deps.insertForward("Printer");
+	//if (can_be_printed(clazz))
+	//	Deps.insertForward("Printer");
 
 	auto ScanFunctionArgs = [&] (const clang::FunctionDecl *const F) {
 		for (auto P : F->params()) {
