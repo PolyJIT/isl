@@ -1670,8 +1670,8 @@ void cpp_generator::generateClasses()
 		isl_class &clazz = KV.second;
 		if (name == "isl_printer")
 			continue;
-		print_class(ci->second);
-		print_class_impl(ci->second);
+		print_class(clazz);
+		print_class_impl(clazz);
 	}
 }
 
