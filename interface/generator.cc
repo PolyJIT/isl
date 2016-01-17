@@ -145,7 +145,17 @@ generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
 		}
 	}
 
-	build_inheritance_map(classes, super_to_subclass);
+	for (auto &KV : classes) {
+		vector<string> sub_classes;
+
+		string name = KV.first;
+		isl_class &s_clazz = KV.second;
+		string superclass_name;
+		while (is_subclass(s_clazz.type, superclass_name)) {
+			s_clazz = classes[superclass_name];
+			super_to_subclass[superclass_name].push_back(name);
+		}
+	}
 }
 
 /* Return a sequence of the types of which the given type declaration is
@@ -632,32 +642,4 @@ int generator::find_context_source(FunctionDecl *method) {
 			ctxSrc = i;
 	}
 	return ctxSrc;
-}
-
-/**
- * \brief Create a map from all casses to all sub classes.
- *
- * \param classes
- * \param super_to_sub
- */
-void generator::build_inheritance_map(ClassMap &classes,
-				      SuperClassMap &super_to_sub)
-{
-	using std::vector;
-
-	ClassMap::const_iterator ci;
-	for (ci = classes.begin(); ci != classes.end(); ++ci) {
-		isl_class clazz = ci->second;
-		string super_name = ci->first;
-		vector<string> sub_classes;
-
-		string name = super_name;
-		isl_class s_clazz = clazz;
-		while (is_subclass(s_clazz.type, name)) {
-			s_clazz = classes[name];
-			sub_classes.push_back(name);
-		}
-
-		super_to_sub[name] = sub_classes;
-	}
 }

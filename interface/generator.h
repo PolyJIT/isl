@@ -115,9 +115,6 @@ protected:
 	 */
 	bool is_inplace(const isl_class &clazz) const;
 	int find_context_source(FunctionDecl *method);
-
-	void build_inheritance_map(ClassMap &classes,
-				   SuperClassMap &inheritance_map);
 };
 
 #endif
