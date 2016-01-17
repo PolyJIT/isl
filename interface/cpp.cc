@@ -1288,6 +1288,7 @@ void cpp_generator::print_constructor(ostream &os, isl_class &clazz,
 	const string CxxClass = type2cpp(clazz.name);
 	int NumParams = cons->getNumParams();
 
+	os << endl;
 	print(os, "  /// \\brief Constructor for {0}\n"
 		  "  ///\n",
 	      IslMethod);
@@ -1496,8 +1497,6 @@ void cpp_generator::print_class(isl_class &clazz)
 	p->print_api_wrapper_h(os);
 	p->print_api_give_h(os);
 	p->print_api_unwrapper_h(os);
-
-	os << endl;
 
 	for (auto &in : clazz.constructors) {
 		os << endl;
@@ -1949,14 +1948,13 @@ void cpp_generator::generateEnums()
 }
 
 /**
- * \brief Construct a new cpp_generator.
+ * \brief Construct a cpp interface generator.
  *
  * \param types
  * \param functions
  * \param enums
  */
 cpp_generator::cpp_generator(set<RecordDecl *> &types,
-	set<FunctionDecl *> &functions,
-	set<EnumDecl *> &enums) : generator(types, functions, enums)
-{
-}
+			     set<FunctionDecl *> &functions,
+			     set<EnumDecl *> &enums)
+    : generator(types, functions, enums){};
