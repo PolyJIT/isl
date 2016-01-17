@@ -1490,11 +1490,8 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	p->print_explicit_constructors_h(os);
 
-	if (!clazz.is_ctx() && !subclass) {
-		print(os, "  const Ctx &Context() const {{ return ctx; }}\n");
-	} else if (clazz.is_ctx()) {
-		print(os, "  const Ctx &Context() const {{ return *this; }}\n");
-    }
+	print(os, "  const Ctx &Context() const {{ return {0}; }}\n",
+	      clazz.is_ctx() ? "*this" : "ctx");
 
 	p->print_api_wrapper_h(os);
 	p->print_api_give_h(os);
