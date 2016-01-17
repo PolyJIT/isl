@@ -1502,9 +1502,9 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	os << endl;
 
-	for (in = clazz.constructors.begin(); in != clazz.constructors.end();
-	     ++in) {
-		print_constructor(os, clazz, *in);
+	for (auto &in : clazz.constructors) {
+		os << endl;
+		print_constructor(os, clazz, in);
 	}
 
 	// We do not free objects of classes that have in-place update
@@ -1668,9 +1668,10 @@ void cpp_generator::generateClasses()
 	print_isl_exception_class();
 	print_function_ptr_helper();
 
-	map<string, isl_class>::iterator ci;
-	for (ci = classes.begin(); ci != classes.end(); ++ci) {
-		if (ci->first == "isl_printer")
+	for (auto &KV : classes) {
+		string name = KV.first;
+		isl_class &clazz = KV.second;
+		if (name == "isl_printer")
 			continue;
 		print_class(ci->second);
 		print_class_impl(ci->second);
