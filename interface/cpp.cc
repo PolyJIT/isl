@@ -1419,6 +1419,19 @@ static std::map<const llvm::StringRef, clang::FunctionDecl *> make_unique(
 	return UniqueFns;
 }
 
+bool cpp_generator::has_method(const std::string &method_name,
+			       const isl_class &clazz)
+{
+	for (auto method : clazz.methods) {
+		const string &name =
+		    methodname2cpp(clazz, method->getNameAsString());
+		if (name.compare(method_name) == 0 /*equal*/) {
+			return true;
+		}
+	}
+	return false;
+}
+
 /**
  * \brief Print out the definition of this isl_class.
  *
