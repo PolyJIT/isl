@@ -102,6 +102,7 @@ protected:
 	bool is_callback_with_user(QualType type);
 	bool is_isl_result_argument(QualType type);
 	bool has_user_pointer(FunctionDecl *fd);
+	void build_inheritance_map(const ClassMap &in, SuperClassMap &out);
 
 	const isl_enum &find_enum(QualType type);
 

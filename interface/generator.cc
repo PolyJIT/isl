@@ -141,6 +141,13 @@ generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
 		}
 	}
 
+	build_inheritance_map(classes, super_to_subclass);
+}
+
+void generator::build_inheritance_map(const ClassMap &in,
+				      SuperClassMap &out)
+{
+	// Create direct edges.
 	for (auto &KV : classes) {
 		isl_class subclass = KV.second;
 		isl_class parent = KV.second;
