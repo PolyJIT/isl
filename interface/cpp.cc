@@ -1511,7 +1511,14 @@ void cpp_generator::print_class(isl_class &clazz)
 	//}
 	for (auto &subclass : super_to_subclass[name]) {
 		os << endl;
-		print(os, "  {0}({1}) {}\n", name, subclass);
+		string subclass_name = type2cpp(subclass.name);
+		if (has_method(format("from{0}()", subclass_name), subclass)) {
+			print(
+			    os,
+			    "  /// \\brief Implicit conversion from {1}.\n"
+			    "  {0}({1} &From) : {0}({0}::from{1}(From)) {{}}\n",
+			    type2cpp(name), subclass_name);
+		}
 	}
 
 	// Print conversion functions for every super class.
@@ -1634,10 +1641,12 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		s_clazz = &classes[s_name];
 		s_name = type2cpp(s_name);
 		os << endl;
-		print(os, "inline {0} {1}::as{0}() const {{\n"
-			  "  return {0}(*this);\n"
-			  "}}\n",
-		      s_name, p_name);
+		if (has_method(format("from{0}()", s_name), *s_clazz)) {
+			print(os, "inline {0} {1}::as{0}() const {{\n"
+				  "  return {0}::from{1}(*this);\n"
+				  "}}\n",
+			      s_name, p_name);
+		}
 	}
 
 	auto MethodsKV = make_unique(clazz.methods);
