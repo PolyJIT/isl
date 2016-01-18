@@ -142,14 +142,12 @@ generator::generator(set<RecordDecl *> &types, set<FunctionDecl *> &functions,
 	}
 
 	for (auto &KV : classes) {
-		vector<string> sub_classes;
-
-		string name = KV.first;
-		isl_class &s_clazz = KV.second;
+		isl_class subclass = KV.second;
+		isl_class parent = KV.second;
 		string superclass_name;
-		while (is_subclass(s_clazz.type, superclass_name)) {
-			s_clazz = classes[superclass_name];
-			super_to_subclass[superclass_name].push_back(name);
+		while (is_subclass(parent.type, superclass_name)) {
+			parent = classes[superclass_name];
+			out[parent.name].insert(subclass);
 		}
 	}
 }
@@ -548,4 +546,9 @@ int generator::find_context_source(FunctionDecl *method) {
 			ctxSrc = i;
 	}
 	return ctxSrc;
+}
+
+/* Lexicographic order on the class name */
+bool operator<(const isl_class &LHS, const isl_class &RHS) {
+	return LHS.name < RHS.name;
 }

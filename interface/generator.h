@@ -42,6 +42,8 @@ struct isl_class {
 	bool is_ctx() const;
 };
 
+bool operator<(const isl_class &LHS, const isl_class &RHS);
+
 struct isl_enum {
 	string name;
 	map<string,int> values;
@@ -49,7 +51,7 @@ struct isl_enum {
 	string name_without_enum(const string &valname) const;
 };
 
-using SuperClassMap = map<string, vector<string>>;
+using SuperClassMap = map<string, set<isl_class>>;
 using ClassMap = map<string, isl_class>;
 
 /* Base class for interface generators.
