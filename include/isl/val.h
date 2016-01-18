@@ -35,8 +35,11 @@ __isl_constructor
 __isl_give isl_val *isl_val_infty(isl_ctx *ctx);
 __isl_constructor
 __isl_give isl_val *isl_val_neginfty(isl_ctx *ctx);
+__isl_constructor
 __isl_give isl_val *isl_val_int_from_si(isl_ctx *ctx, long i);
+__isl_constructor
 __isl_give isl_val *isl_val_int_from_ui(isl_ctx *ctx, unsigned long u);
+__isl_constructor
 __isl_give isl_val *isl_val_int_from_chunks(isl_ctx *ctx, size_t n,
 	size_t size, const void *chunks);
 
