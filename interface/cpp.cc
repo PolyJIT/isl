@@ -345,29 +345,27 @@ class cpp_class_printer
 
 	void print_explicit_copyable_subclass(ostream &os)
 	{
-		print(os, "  explicit {0}(Ctx ctx, {1} *That) : "
-			  "{2}(ctx, (void *)That) {{/* empty */}}\n"
-			  "  explicit {0}(Ctx ctx, void *That) : "
-			  "{2}(ctx, (void *)That) {{/* empty */}}\n",
-		      p_name, name, base_class);
+		print_explicit_copyable(os);
 	}
+
 	void print_explicit_copyable(ostream &os) {
-		print(os, "  Ctx ctx;\n");
-		print(os, "  void * This;\n");
-
-		print(os, "  explicit {0}(Ctx ctx, {1} *That) : "
-		      "ctx(ctx), This((void *)That) {{}}\n",
+		print(os, "protected:\n"
+			  "  Ctx ctx;\n"
+			  "  void * This;\n"
+			  "public:\n"
+			  "  explicit {0}(Ctx ctx, {1} *That) : "
+			  "ctx(ctx), This((void *)That) {{}}\n"
+			  "  explicit {0}(Ctx ctx, void *That) : "
+			  "ctx(ctx), This(That) {{}}\n",
 		      p_name, name);
-		print(os, "  explicit {0}(Ctx ctx, void *That) : "
-		      "ctx(ctx), This(That) {{}}\n",
-		      p_name);
 	}
-	void print_explicit_non_copyable(ostream &os) {
-		print(os, "  Ctx ctx;\n");
-		print(os, "  std::shared_ptr<ptr> This;\n");
 
-		print(os, "  explicit {0}(Ctx ctx, "
-			  "{1} *That) : "
+	void print_explicit_non_copyable(ostream &os) {
+		print(os, "protected:\n"
+			  "  Ctx ctx;\n"
+			  "  std::shared_ptr<ptr> This;\n"
+			  "public:\n"
+			  "  explicit {0}(Ctx ctx, {1} *That) : "
 			  "ctx(ctx), This(std::make_shared<ptr>(That)) {{}}\n",
 		      p_name, name);
 	}
@@ -417,16 +415,10 @@ class cpp_class_printer
 	 */
 	virtual void print_copy_constructor_h(ostream &os)
 	{
-		if (subclass)
-			print(os,
-			      "  {0}(const {0} &Other) : {1}(Other.Context(), "
-			      "Other.GetCopy()) {{}}\n",
-			      p_name, base_class);
-		else
-			print(os, "  {0}(const {0} &Other) : "
-				  "ctx(Other.Context()), This(Other.GetCopy())"
-				  " {{}}\n",
-			      p_name, base_class);
+		print(os, "  {0}(const {0} &Other) : "
+			  "ctx(Other.Context()), This(Other.GetCopy())"
+			  " {{}}\n",
+		      p_name, base_class);
 	}
 
 	/**
@@ -471,16 +463,11 @@ class cpp_class_printer
 	 */
 	virtual void print_move_constructor_h(ostream &os)
 	{
-		if (subclass)
-			print(os, "  {0} ({0} && Other) : {1}(Other.Context(), "
-				  "Other.This) {{}}\n",
-			      p_name, base_class);
-		else
-			print(os,
-			      "  {0} ({0} && Other) : ctx(Other.Context()), "
-			      "This(Other.This)"
-			      " {{}}\n",
-			      p_name, base_class);
+		print(os,
+		      "  {0} ({0} && Other) : ctx(Other.Context()), "
+		      "This(Other.This)"
+		      " {{}}\n",
+		      p_name, base_class);
 	}
 
 	/**
@@ -668,9 +655,13 @@ class cpp_class_printer
 	virtual void print_destructor_h(ostream &os)
 	{
 		if (can_copy && !is_inplace)
-			print(os, "  virtual ~{0}();\n", p_name);
+			print(os, "public:\n"
+				  "  virtual ~{0}();\n",
+			      p_name);
 		else
-			print(os, "  virtual ~{0}() = default;\n", p_name);
+			print(os, "public:\n"
+				  "  virtual ~{0}() = default;\n",
+			      p_name);
 	}
 
 	/**
@@ -751,7 +742,9 @@ class context_class_printer : public cpp_class_printer
 
 	void print_explicit_constructors_h(ostream &os) override
 	{
-		print(os, "  std::shared_ptr<ptr> This;\n"
+		print(os, "protected:\n"
+			  "  std::shared_ptr<ptr> This;\n"
+			  "public:\n"
 			  "  explicit {}(std::shared_ptr<ptr> That) : "
 			  "This(That) {{}}\n",
 		      p_name);
@@ -1488,19 +1481,10 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	print(os, "#include \"isl/IslFnPtr.h\"\n\n");
 	print(os, "namespace isl {{\n{0}\n", getForwardDecls(Deps));
-	if (subclass) {
-		string base_class = type2cpp(super);
-		print(os, "class {0} : public {1} {{\n", p_name, base_class);
-	} else {
-		print(os, "class {0} {{\n", p_name);
-	}
-	print(os, "protected:\n");
+	print(os, "class {0} {{\n", p_name);
 
 	if (!can_cp)
 		print_ptr_wrapper(os, name);
-
-	print(os, "\n");
-	print(os, "public:\n");
 
 	p->print_explicit_constructors_h(os);
 
@@ -1532,7 +1516,7 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	// Print conversion functions for every super class.
 	os << endl;
-	print(os, "  virtual {0} as{0}() const;\n", p_name);
+	print(os, "  {0} as{0}() const;\n", p_name);
 
 	isl_class *s_clazz = &clazz;
 	string s_name;
@@ -1540,7 +1524,7 @@ void cpp_generator::print_class(isl_class &clazz)
 		s_clazz = &classes[s_name];
 		s_name = type2cpp(s_name);
 		os << endl;
-		print(os, "  virtual {0} as{0}() const override;\n", s_name);
+		print(os, "  {0} as{0}() const;\n", s_name);
 	}
 
 	auto MethodsKV = make_unique(clazz.methods);
