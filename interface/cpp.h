@@ -119,6 +119,7 @@ private:
                  bool is_takes);
 
   string cppTypeName(QualType ty);
+  bool has_method(const std::string &method_name, const isl_class &clazz);
 };
 
 #endif // CPP_H
