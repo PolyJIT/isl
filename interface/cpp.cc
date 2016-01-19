@@ -1422,7 +1422,8 @@ static std::map<const llvm::StringRef, clang::FunctionDecl *> make_unique(
 bool cpp_generator::has_method(const std::string &method_name,
 			       const isl_class &clazz)
 {
-	for (auto method : clazz.methods) {
+	const set<FunctionDecl *> methods = clazz.methods.at(method_name);
+	for (auto method : methods) {
 		const string &name =
 		    methodname2cpp(clazz, method->getNameAsString());
 		if (name.compare(method_name) == 0 /*equal*/) {
@@ -1527,7 +1528,7 @@ void cpp_generator::print_class(isl_class &clazz)
 	//}
 	for (auto &subclass : super_to_subclass[name]) {
 		os << endl;
-		print(os, "  {0}({1}) {}\n", name, subclass);
+		print(os, "  {0}({1}) {}\n", name, subclass.name);
 	}
 
 	// Print conversion functions for every super class.
@@ -1543,9 +1544,9 @@ void cpp_generator::print_class(isl_class &clazz)
 		print(os, "  virtual {0} as{0}() const override;\n", s_name);
 	}
 
-	auto MethodsKV = make_unique(clazz.methods);
-        for (auto MethodKV : MethodsKV) {
-		print_method(os, clazz, MethodKV.second, subclass, super);
+	for (auto &MethodKV : clazz.methods)
+		for (auto &method : MethodKV.second) {
+		print_method(os, clazz, method, subclass, super);
 	}
 
 	p->print_copy_constructor_h(os);
@@ -1656,10 +1657,10 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		      s_name, p_name);
 	}
 
-	auto MethodsKV = make_unique(clazz.methods);
-	for (auto &MethodKV : MethodsKV) {
-		print_method_impl(os, clazz, MethodKV.second, subclass, super);
-	}
+	for (auto &MethodKV : clazz.methods)
+		for (auto &method : MethodKV.second) {
+			print_method_impl(os, clazz, method, subclass, super);
+		}
 
 	os << endl;
 	// if (name.compare("isl_val") == 0)
@@ -1769,11 +1770,15 @@ Dependences cpp_generator::getDependences(isl_class &clazz)
 
 	std::for_each(clazz.constructors.begin(), clazz.constructors.end(),
 		ScanFunctionArgs);
-	std::for_each(clazz.methods.begin(), clazz.methods.end(),
-		[&] (const FunctionDecl *const M) {
-			ScanFunctionArgs(M);
-			insertIfDependency(clazz, Deps, M->getReturnType());
-		});
+	for (auto &MethodsKV : clazz.methods) {
+		const set<FunctionDecl *> methods = MethodsKV.second;
+		std::for_each(methods.begin(), methods.end(),
+			      [&](const FunctionDecl *const M) {
+				      ScanFunctionArgs(M);
+				      insertIfDependency(clazz, Deps,
+							 M->getReturnType());
+			      });
+	}
 
 	string super;
 	if (is_subclass(clazz.type, super))
