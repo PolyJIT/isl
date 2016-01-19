@@ -337,7 +337,7 @@ void python_generator::print_method(const isl_class &clazz,
 
 	print_method_header(is_static(clazz, any_method), cname, num_params);
 
-	for (it = clazz.methods.begin(); it != clazz.methods.end(); ++it)
+	for (it = methods.begin(); it != methods.end(); ++it)
 		print_method_overload(clazz, *it, super);
 }
 
@@ -519,18 +519,19 @@ void python_generator::print(const isl_class &clazz)
 	printf("            return 'isl.%s(\"%%s\")' %% s\n",
 		p_name.c_str());
 
-	for (auto *method : clazz.methods)
-		print_method(clazz, method->getNameAsString(), clazz.methods,
-			     super);
+	for (auto &MethodKV : clazz.methods)
+		print_method(clazz, MethodKV.first, MethodKV.second, super);
 
 	printf("\n");
 	for (in = clazz.constructors.begin(); in != clazz.constructors.end(); ++in) {
 		print_restype(*in);
 		print_argtypes(*in);
 	}
-	for (auto &method : clazz.methods) {
-		print_restype(method);
-		print_argtypes(method);
+	for (auto &MethodKV : clazz.methods) {
+		for (auto &method : MethodKV.second) {
+			print_restype(method);
+			print_argtypes(method);
+		}
 	}
 	printf("isl.%s_free.argtypes = [c_void_p]\n", name.c_str());
 	printf("isl.%s_to_str.argtypes = [c_void_p]\n", name.c_str());
