@@ -1623,7 +1623,7 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 
 	// Print conversion functions for every super class.
 	os << endl;
-	isl_class &s_clazz = clazz;
+	isl_class s_clazz = clazz;
 	string s_name;
 
 	while (is_subclass(s_clazz.type, s_name)) {
