@@ -1536,8 +1536,8 @@ void cpp_generator::print_class(isl_class &clazz)
 	}
 
 	for (auto &MethodKV : clazz.methods)
-		for (auto &method : MethodKV.second) {
-		print_method(os, clazz, method, subclass, super);
+		for (auto &method : make_unique(MethodKV.second)) {
+		print_method(os, clazz, method.second, subclass, super);
 	}
 
 	p->print_copy_constructor_h(os);
@@ -1644,8 +1644,9 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 	}
 
 	for (auto &MethodKV : clazz.methods)
-		for (auto &method : MethodKV.second) {
-			print_method_impl(os, clazz, method, subclass, super);
+		for (auto &method : make_unique(MethodKV.second)) {
+			print_method_impl(os, clazz, method.second, subclass,
+					  super);
 		}
 
 	os << endl;
