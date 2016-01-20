@@ -1623,11 +1623,6 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 
 	// Print conversion functions for every super class.
 	os << endl;
-	print(os, "inline {0} {0}::as{0}() const {{\n"
-		  "  return {0}(ctx, {1});\n"
-		  "}}\n",
-	      p_name, can_cp ? "GetCopy()" : "*this");
-
 	isl_class &s_clazz = clazz;
 	string s_name;
 
