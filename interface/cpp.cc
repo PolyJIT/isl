@@ -1512,7 +1512,6 @@ void cpp_generator::print_class(isl_class &clazz)
 	//}
 	for (auto &subclass : super_to_subclass[name]) {
 		os << endl;
-		print(os, "  {0}({1}) {}\n", name, subclass.name);
 		string subclass_name = type2cpp(subclass.name);
 		if (has_method(format("from{0}()", subclass_name), subclass)) {
 			print(
