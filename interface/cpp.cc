@@ -1402,7 +1402,7 @@ bool cpp_generator::can_copy(isl_class &clazz)
  * \param methods A set of methods we want to make unique by name.
  *
  * \returns a map from method name to method pointer.
- */
+ **/
 static std::map<const llvm::StringRef, clang::FunctionDecl *> make_unique(
 	const std::set<clang::FunctionDecl *> &methods) {
 	std::map<const llvm::StringRef, clang::FunctionDecl *> UniqueFns;
@@ -1415,14 +1415,14 @@ static std::map<const llvm::StringRef, clang::FunctionDecl *> make_unique(
 bool cpp_generator::has_method(const std::string &method_name,
 			       const isl_class &clazz)
 {
-	const set<FunctionDecl *> methods = clazz.methods.at(method_name);
-	for (auto method : methods) {
-		const string &name =
-		    methodname2cpp(clazz, method->getNameAsString());
-		if (name.compare(method_name) == 0 /*equal*/) {
-			return true;
+	for (auto &MethodKV : clazz.methods)
+		for (auto method : MethodKV.second) {
+			const string &name =
+			    methodname2cpp(clazz, method->getNameAsString());
+			if (name.compare(method_name) == 0 /*equal*/) {
+				return true;
+			}
 		}
-	}
 	return false;
 }
 
