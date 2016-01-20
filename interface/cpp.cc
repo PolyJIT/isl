@@ -1628,14 +1628,14 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		  "}}\n",
 	      p_name, can_cp ? "GetCopy()" : "*this");
 
-	isl_class *s_clazz = &clazz;
+	isl_class &s_clazz = clazz;
 	string s_name;
 
-	while (is_subclass(s_clazz->type, s_name)) {
-		s_clazz = &classes[s_name];
+	while (is_subclass(s_clazz.type, s_name)) {
+		s_clazz = classes[s_name];
 		s_name = type2cpp(s_name);
 		os << endl;
-		if (has_method(format("from{0}()", s_name), *s_clazz)) {
+		if (has_method(format("from{0}()", s_name), s_clazz)) {
 			print(os, "inline {0} {1}::as{0}() const {{\n"
 				  "  return {0}::from{1}(*this);\n"
 				  "}}\n",
