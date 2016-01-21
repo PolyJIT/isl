@@ -768,6 +768,28 @@ class context_class_printer : public cpp_class_printer
 };
 
 /**
+ * \brief Get an isl_ptr. Depending on the memory management qualifiers.
+ *
+ * Either we get a copy or the wrapped object.
+ *
+ * \param expression the isl expression to get a pointer from
+ * \param is_takes True, if we don't need a copy of the wrapped object.
+ * \param can_copy True, if we cannot create a copy of the wrapped object.
+ *
+ * @return an expression that returns an isl pointer type.
+ */
+string cpp_generator::isl_ptr(const string &expression, bool is_takes,
+			      bool can_copy)
+{
+	if (is_takes)
+		if (can_copy)
+			return format("({0}).{1}()", expression,
+					"GetCopy");
+	return format("({0}).{1}()", expression,
+			"Get");
+}
+
+/**
  * \brief Convert a parameter type to a cpp compatible name
  *
  * Copied from cpp bindings.
@@ -874,23 +896,6 @@ string cpp_generator::methodname2cpp(const isl_class &clazz,
 }
 
 /**
- * \brief Get an isl_ptr. Depending on the memory management qualifiers.
- *
- * Either we get a copy or the wrapped objects.
- *
- * \param classname the isl classname (unused)
- * \param expression the isl expression to get a pointer from
- * \param is_takes True, if we don't need a copy of the wrapped object.
- *
- * @return an expression that returns an isl pointer type.
- */
-string cpp_generator::isl_ptr(const string &classname, const string &expression,
-	bool is_takes)
-{
-	return format("({0}).{1}()", expression, (is_takes) ? "Give" : "Get");
-}
-
-/**
  * \brief Return the isl type name of this type
  *
  * Copied from cpp bindings.
@@ -917,13 +922,6 @@ void cpp_generator::prepare_argument(ostream &os, const ParmVarDecl *param)
 	if (is_isl_result_argument(type)) {
 		QualType pType = type->getPointeeType();
 		print(os, "  {0} _{1} = nullptr;\n", pType.getAsString(), name);
-	} else if (is_isl_class(type) && !is_isl_ctx(type)) {
-		// Make sure the isl object is of the right type,
-		// i.e., it matches the compile time type of the
-		// parameter (an actual argument for, e.g., isl_union_set
-		// could be an isl_set at runtime).
-		print(os, "  {0} _cast_{1} = {1}.as{0}();\n", cppTypeName(type),
-		      name);
 	}
 }
 
@@ -948,8 +946,7 @@ void cpp_generator::print_argument(ostream &os, ParmVarDecl *param)
 	} else if (is_isl_ctx(type)) {
 		print(os, "({0}.Get())", name);
 	} else if (is_isl_class(type)) {
-		os << isl_ptr(extract_type(type), "_cast_" + name,
-			      takes(param));
+		os << isl_ptr(name, takes(param), can_copy(type));
 	} else if (is_string(type)) {
 		print(os, "{0}.c_str()", name);
 	} else if (is_callback(type)) {
@@ -1222,7 +1219,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 	os << endl;
 	print(os, "inline {0} {2}::{1}({3}) const {{\n"
 		  "  {11}.lock();\n"
-		  "  {2} self = as{2}();\n"
+		  "  {2} self = *this;\n"
 		  "{4}"
 		  "  {5} {6}({7}{8});\n"
 		  "{9}"
@@ -1231,8 +1228,8 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 		  "}}\n",
 	      CxxRetType, CxxMethod, CxxClass,
 	      get_argument_decl_list(method, 1), prepare_os.str(), IslRetType,
-	      IslMethod,
-	      isl_ptr(clazz.name, "self", takes(method->getParamDecl(0))),
+	      IslMethod, isl_ptr("self", takes(method->getParamDecl(0)),
+				 can_copy(method->getParamDecl(0)->getType())),
 	      param_os.str(), result_os.str(), return_os.str(), Context);
 }
 
@@ -1332,13 +1329,7 @@ void cpp_generator::print_constructor_impl(ostream &os, isl_class &clazz,
 		  	      "{4}\n",
 		  	  prepare_os.str(), clazz.name, IslMethod, ArgumentList,
 		  	  handle_error_os.str(), result_os.str());
-		if (can_copy(clazz)) {
-			print(os, "  return {0}(_ctx, That);\n", CxxClass);
-		} else {
-			print(os,
-				"  std::shared_ptr<ptr> _That(new ptr(That));\n"
-				"  return {0}({1}, _That);\n", CxxClass, Context);
-		}
+		print(os, "  return {0}(_ctx, That);\n", CxxClass);
 	}
 
 	print(os, "}}\n");
@@ -1372,6 +1363,13 @@ static set<string> NonCopyable = {"isl_ctx", "isl_schedule", "isl_printer"};
 bool cpp_generator::can_copy(isl_class &clazz)
 {
 	return NonCopyable.count(clazz.name) == 0;
+}
+
+bool cpp_generator::can_copy(const QualType &type)
+{
+	if (is_isl_class(type))
+		return can_copy(classes[extract_type(type)]);
+	return false;
 }
 
 /**

@@ -80,6 +80,7 @@ private:
   void print_function_ptr_helper();
 
   bool can_copy(isl_class &clazz);
+  bool can_copy(const QualType &type);
 
   void insertIfDependency(QualType &argTy);
   void insertIfDependency(isl_class &clazz, Dependences &Deps, QualType && Ty);
@@ -115,8 +116,7 @@ private:
   string rettype2jna(const FunctionDecl *method);
   string rettype2cpp(const FunctionDecl *method);
   string methodname2cpp(const isl_class &clazz, const string &methodname);
-  string isl_ptr(const string &classname, const string &expression,
-                 bool is_takes);
+  string isl_ptr(const string &expression, bool is_takes, bool can_copy);
 
   string cppTypeName(QualType ty);
   bool has_method(const std::string &method_name, const isl_class &clazz);
