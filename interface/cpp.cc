@@ -517,27 +517,9 @@ class cpp_class_printer
 	 */
 	virtual void print_api_wrapper_h(ostream &os)
 	{
-		// 1. Wrap an isl_* object.
-	//	print(os,
-	//	      "  ///\brief Wrap an existing isl object.\n"
-	//	      "  ///\n"
-	//	      "  /// This serves as an entry point into the C++ API.\n"
-	//	      "  /// We take ownership of the isl object.\n"
-	//	      "  ///\n"
-	//	      "  /// \\param That the {0} we want to wrap.\n"
-	//	      "  explicit {1}({0} *That) : ", name, p_name);
-
-	//	print(os,
-	//	      "{1}(Ctx({0}_get_ctx(That)), ",
-	//	      name, p_name);
-
 		if (can_copy) {
-			//print(os, "That) {{}}\n");
 			print(os, "  {0} *GetCopy() const;\n", name);
 		} else {
-			//print(os,
-			//      "std::make_shared<isl::{0}::ptr>(That)) {{}}\n",
-			//      p_name);
 			print(os, "  std::shared_ptr<isl::{0}::ptr> GetCopy() "
 				  "const;\n",
 			      p_name);
@@ -1241,14 +1223,10 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 	print(os, "inline {0} {2}::{1}({3}) const {{\n"
 		  "  {11}.lock();\n"
 		  "  {2} self = as{2}();\n"
-		  "  // Prepare arguments\n"
 		  "{4}"
-		  "  // Call {6}\n"
 		  "  {5} {6}({7}{8});\n"
-		  "  // Handle result argument(s)\n"
 		  "{9}"
 		  "  {11}.unlock();\n"
-		  "  // Handle return\n"
 		  "{10}"
 		  "}}\n",
 	      CxxRetType, CxxMethod, CxxClass,
@@ -1501,15 +1479,9 @@ void cpp_generator::print_class(isl_class &clazz)
 		print_constructor(os, clazz, in);
 	}
 
-	// We do not free objects of classes that have in-place update
-	// (e.g., isl_band). These values exist only in dependence of
-	// parent objects and are freed when the parent object goes away.
 	p->print_destructor_h(os);
 	p->print_extra_methods_h(os);
 
-	//if (can_be_printed(clazz)) {
-	//	p->print_print_methods_h(os);
-	//}
 	for (auto &subclass : super_to_subclass[name]) {
 		os << endl;
 		string subclass_name = type2cpp(subclass.name);
@@ -1558,8 +1530,6 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	print(os, "}};\n"
 		  "}} // namespace isl\n");
-	// if (name.compare("isl_val") == 0)
-	//  print_additional_val_methods(os);
 
 	os << getGuardFooter(p_name);
 }
@@ -1607,19 +1577,12 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		print_constructor_impl(os, clazz, in);
         }
 
-	// We do not free objects of classes that have in-place update
-	// (e.g., isl_band). These values exist only in dependence of
-	// parent objects and are freed when the parent object goes away.
 	if (!is_inplace(clazz)) {
 		p->print_destructor(os);
 	}
 
 	p->print_api_give(os);
 	p->print_api_unwrapper(os);
-
-	//if (can_be_printed(clazz)) {
-	//	p->print_print_methods(os);
-	//}
 
 	// Print conversion functions for every super class.
 	os << endl;
@@ -1645,8 +1608,6 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 		}
 
 	os << endl;
-	// if (name.compare("isl_val") == 0)
-	//  print_additional_val_methods(os);
 	print(os, "}} // namespace isl\n");
 	os << getGuardFooter(p_name + "_IMPL");
 }
@@ -1740,9 +1701,6 @@ Dependences cpp_generator::getDependences(isl_class &clazz)
 	string p_name = type2cpp(clazz.name);
 	Dependences Deps;
 	set<clang::FunctionDecl *>::iterator it, ie;
-
-	//if (can_be_printed(clazz))
-	//	Deps.insertForward("Printer");
 
 	auto ScanFunctionArgs = [&] (const clang::FunctionDecl *const F) {
 		for (auto P : F->params()) {
