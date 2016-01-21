@@ -977,8 +977,6 @@ void cpp_generator::handle_result_argument(ostream &os, const string &ctx,
 			  "    {1}->reset(new {0}(_tmp_{1}));\n"
 			  "  }}\n",
 		      cppTyName, name);
-	} else if (is_isl_ctx(type)) {
-		print(os, "  {0}.unlock();\n", name);
 	}
 }
 
