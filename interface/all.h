@@ -6,3 +6,4 @@
 #include <isl/union_map.h>
 #include <isl/flow.h>
 #include <isl/schedule_node.h>
+#include <isl/polynomial.h>
