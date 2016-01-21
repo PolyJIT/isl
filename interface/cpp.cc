@@ -1217,7 +1217,6 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 	os << endl;
 	print(os, "inline {0} {2}::{1}({3}) const {{\n"
 		  "  {11}.lock();\n"
-		  "  {2} self = *this;\n"
 		  "{4}"
 		  "  {5} {6}({7}{8});\n"
 		  "{9}"
@@ -1226,7 +1225,7 @@ void cpp_generator::print_method_impl(ostream &os, isl_class &clazz,
 		  "}}\n",
 	      CxxRetType, CxxMethod, CxxClass,
 	      get_argument_decl_list(method, 1), prepare_os.str(), IslRetType,
-	      IslMethod, isl_ptr("self", takes(method->getParamDecl(0)),
+	      IslMethod, isl_ptr("*this", takes(method->getParamDecl(0)),
 				 can_copy(method->getParamDecl(0)->getType())),
 	      param_os.str(), result_os.str(), return_os.str(), Context);
 }
