@@ -241,7 +241,7 @@ int test_tile(Ctx &C)
 		MultiUnionPwAff Mupa =
 		    MultiUnionPwAff::readFromStr(C, tile_tests[i].schedule);
 		Node = Node.insertPartialSchedule(Mupa);
-		Val Sizes = Val::readFromStr(C, tile_tests[i].sizes);
+                MultiVal Sizes = MultiVal::readFromStr(C, tile_tests[i].sizes);
 		Node = Node.bandTile(Sizes);
 
 		Mupa = MultiUnionPwAff::readFromStr(C, tile_tests[i].tile);
