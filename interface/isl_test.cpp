@@ -450,7 +450,7 @@ static int test_simplify(Ctx &C)
 	    "i3 >= i2 }");
 	empty = bset.isEmpty();
 	bset = bset.projectOut(DimType::Set, 3, 1);
-	if (!bset.Give())
+	if (!bset.Get())
 		return -1;
 	if (empty == Bool::False)
 		isl_die(C.Get(), isl_error_unknown,
