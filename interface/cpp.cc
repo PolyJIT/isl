@@ -494,6 +494,7 @@ class cpp_class_printer
 	 */
 	virtual void print_api_wrapper(ostream &os)
 	{
+		std::endl(os);
 		if (can_copy) {
 			print(os, "inline {0} *{1}::GetCopy() const {{\n"
 				  "  return {0}_copy(({0} *)This);\n"
@@ -515,6 +516,7 @@ class cpp_class_printer
 	 */
 	virtual void print_api_wrapper_h(ostream &os)
 	{
+		std::endl(os);
 		if (can_copy) {
 			print(os, "  __isl_give {0} *GetCopy() const;\n", name);
 		} else {
@@ -1135,13 +1137,13 @@ void cpp_generator::print_method(ostream &os, isl_class &clazz,
 			print(comment, "  /// \\param [in] {0}\n", ParamName);
 	}
 
-	os << endl;
 	print(os, "  /// \\brief Generated from  ::<{0}>\n"
 		  "  ///\n"
 		  "{1}"
 		  "  ///\n"
 		  "  /// \\returns A new {2}\n"
-		  "  {2} {3}({4}) const;\n",
+		  "  {2} {3}({4}) const;\n"
+		  "\n",
 	      method->getNameAsString(), comment.str(), CxxRetType, CxxMethod,
 	      get_argument_decl_list(method, 1));
 }
@@ -1460,6 +1462,7 @@ void cpp_generator::print_class(isl_class &clazz)
 
 	p->print_explicit_constructors_h(os);
 
+	std::endl(os);
 	print(os, "  const Ctx &Context() const {{ return {0}; }}\n",
 	      clazz.is_ctx() ? "*this" : "ctx");
 
