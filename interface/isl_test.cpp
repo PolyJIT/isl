@@ -641,10 +641,10 @@ static int test_list(Ctx &C)
 
 	IdList list = IdList::alloc(C, 4);
 
-	list.add(a);
-	list.add(b);
-	list.add(c);
-	list.add(d);
+	list = list.add(a);
+	list = list.add(b);
+	list = list.add(c);
+	list = list.add(d);
 	list = IdList(C, isl_id_list_drop(list.Give(), 1, 1));
 
 	if (isl_id_list_n_id(list.Get()) != 3) {
