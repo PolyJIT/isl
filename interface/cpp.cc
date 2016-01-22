@@ -516,7 +516,7 @@ class cpp_class_printer
 	virtual void print_api_wrapper_h(ostream &os)
 	{
 		if (can_copy) {
-			print(os, "  {0} *GetCopy() const;\n", name);
+			print(os, "  __isl_give {0} *GetCopy() const;\n", name);
 		} else {
 			print(os, "  std::shared_ptr<isl::{0}::ptr> GetCopy() "
 				  "const;\n",
@@ -552,7 +552,7 @@ class cpp_class_printer
 	{
 		print(os, "  /// \\brief unwrap the stored isl object.\n"
 			  "  /// \\return a the wrapped isl object.\n"
-			  "  {0} *Get() const;\n",
+			  "  __isl_give {0} *Get() const;\n",
 		      name);
 	}
 
@@ -607,7 +607,7 @@ class cpp_class_printer
 		      "Give()\n"
 		      "  ///\n"
 		      "  /// \\returns the wrapped isl object.\n"
-		      "  {0} *Give();\n",
+		      "  __isl_give {0} *Give();\n",
 		      name);
 	}
 
