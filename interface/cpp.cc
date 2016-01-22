@@ -354,8 +354,6 @@ class cpp_class_printer
 			  "  void * This;\n"
 			  "public:\n"
 			  "  explicit {0}(Ctx ctx, {1} *That) : "
-			  "ctx(ctx), This((void *)That) {{}}\n"
-			  "  explicit {0}(Ctx ctx, void *That) : "
 			  "ctx(ctx), This(That) {{}}\n",
 		      p_name, name);
 	}
@@ -1489,19 +1487,6 @@ void cpp_generator::print_class(isl_class &clazz)
 		}
 	}
 
-	// Print conversion functions for every super class.
-	os << endl;
-	print(os, "  {0} as{0}() const;\n", p_name);
-
-	isl_class *s_clazz = &clazz;
-	string s_name;
-	while (is_subclass(s_clazz->type, s_name)) {
-		s_clazz = &classes[s_name];
-		s_name = type2cpp(s_name);
-		os << endl;
-		print(os, "  {0} as{0}() const;\n", s_name);
-	}
-
 	for (auto &MethodKV : clazz.methods)
 		for (auto &method : make_unique(MethodKV.second)) {
 		print_method(os, clazz, method.second, subclass, super);
@@ -1578,23 +1563,6 @@ void cpp_generator::print_class_impl(isl_class &clazz)
 
 	p->print_api_give(os);
 	p->print_api_unwrapper(os);
-
-	// Print conversion functions for every super class.
-	os << endl;
-	isl_class s_clazz = clazz;
-	string s_name;
-
-	while (is_subclass(s_clazz.type, s_name)) {
-		s_clazz = classes[s_name];
-		s_name = type2cpp(s_name);
-		os << endl;
-		if (has_method(format("from{0}()", s_name), s_clazz)) {
-			print(os, "inline {0} {1}::as{0}() const {{\n"
-				  "  return {0}::from{1}(*this);\n"
-				  "}}\n",
-			      s_name, p_name);
-		}
-	}
 
 	for (auto &MethodKV : clazz.methods)
 		for (auto &method : make_unique(MethodKV.second)) {
