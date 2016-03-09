@@ -157,7 +157,9 @@ __isl_give isl_basic_set *isl_basic_set_read_from_str(isl_ctx *ctx,
 __isl_give isl_set *isl_set_read_from_file(isl_ctx *ctx, FILE *input);
 __isl_constructor
 __isl_give isl_set *isl_set_read_from_str(isl_ctx *ctx, const char *str);
+__isl_export
 void isl_basic_set_dump(__isl_keep isl_basic_set *bset);
+__isl_export
 void isl_set_dump(__isl_keep isl_set *set);
 __isl_export
 __isl_give isl_printer *isl_printer_print_basic_set(
@@ -591,6 +593,7 @@ __isl_give isl_pw_aff *isl_set_dim_max(__isl_take isl_set *set, int pos);
 __isl_export
 __isl_give isl_pw_aff *isl_set_dim_min(__isl_take isl_set *set, int pos);
 
+__isl_export
 __isl_give char *isl_set_to_str(__isl_keep isl_set *set);
 
 #if defined(__cplusplus)

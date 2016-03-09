@@ -100,6 +100,7 @@ __isl_export
 __isl_give isl_printer *isl_printer_print_ast_expr(__isl_take isl_printer *p,
 	__isl_keep isl_ast_expr *expr);
 void isl_ast_expr_dump(__isl_keep isl_ast_expr *expr);
+__isl_export
 __isl_give char *isl_ast_expr_to_str(__isl_keep isl_ast_expr *expr);
 
 __isl_constructor

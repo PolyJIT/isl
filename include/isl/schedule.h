@@ -149,6 +149,7 @@ __isl_export
 __isl_give isl_printer *isl_printer_print_schedule(__isl_take isl_printer *p,
 	__isl_keep isl_schedule *schedule);
 void isl_schedule_dump(__isl_keep isl_schedule *schedule);
+__isl_export
 __isl_give char *isl_schedule_to_str(__isl_keep isl_schedule *schedule);
 
 __isl_export

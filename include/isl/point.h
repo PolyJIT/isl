@@ -27,9 +27,10 @@ __isl_give isl_val *isl_point_get_coordinate_val(__isl_keep isl_point *pnt,
 __isl_export
 __isl_give isl_point *isl_point_set_coordinate_val(__isl_take isl_point *pnt,
 	enum isl_dim_type type, int pos, __isl_take isl_val *v);
-
+__isl_export
 __isl_give isl_point *isl_point_add_ui(__isl_take isl_point *pnt,
 	enum isl_dim_type type, int pos, unsigned val);
+__isl_export
 __isl_give isl_point *isl_point_sub_ui(__isl_take isl_point *pnt,
 	enum isl_dim_type type, int pos, unsigned val);
 
@@ -41,6 +42,7 @@ isl_bool isl_point_is_void(__isl_keep isl_point *pnt);
 __isl_export
 __isl_give isl_printer *isl_printer_print_point(
 	__isl_take isl_printer *printer, __isl_keep isl_point *pnt);
+__isl_export
 void isl_point_dump(__isl_keep isl_point *pnt);
 
 #if defined(__cplusplus)

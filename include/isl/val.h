@@ -146,6 +146,7 @@ __isl_export
 __isl_give isl_printer *isl_printer_print_val(__isl_take isl_printer *p,
 	__isl_keep isl_val *v);
 void isl_val_dump(__isl_keep isl_val *v);
+__isl_export
 __isl_give char *isl_val_to_str(__isl_keep isl_val *v);
 
 __isl_export
@@ -161,6 +162,7 @@ __isl_give isl_multi_val *isl_multi_val_read_from_str(isl_ctx *ctx,
 __isl_give isl_printer *isl_printer_print_multi_val(__isl_take isl_printer *p,
 	__isl_keep isl_multi_val *mv);
 void isl_multi_val_dump(__isl_keep isl_multi_val *mv);
+__isl_export
 __isl_give char *isl_multi_val_to_str(__isl_keep isl_multi_val *mv);
 
 #if defined(__cplusplus)

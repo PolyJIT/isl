@@ -99,6 +99,7 @@ isl_ctx *isl_union_access_info_get_ctx(
 
 __isl_give isl_printer *isl_printer_print_union_access_info(
 	__isl_take isl_printer *p, __isl_keep isl_union_access_info *access);
+__isl_export
 __isl_give char *isl_union_access_info_to_str(
 	__isl_keep isl_union_access_info *access);
 
@@ -129,6 +130,7 @@ __isl_null isl_union_flow *isl_union_flow_free(__isl_take isl_union_flow *flow);
 
 __isl_give isl_printer *isl_printer_print_union_flow(
 	__isl_take isl_printer *p, __isl_keep isl_union_flow *flow);
+__isl_export
 __isl_give char *isl_union_flow_to_str(__isl_keep isl_union_flow *flow);
 
 __isl_export
