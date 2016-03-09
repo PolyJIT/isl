@@ -124,7 +124,6 @@ const string cpp_generator::getIncludes(isl_class &clazz, bool impl = false)
 	}
 
 	includes += "#include <string>\n";
-	includes += "#include <ostream>\n";
 
 	return includes;
 }
@@ -1717,7 +1716,6 @@ void cpp_generator::print_isl_obj_class()
 	      "\n"
 	      "#include <memory>\n"
 	      "#include <vector>\n"
-	      "#include <iostream>\n"
 	      "\n"
 	      "namespace isl {{\n",
 	      p_name);
@@ -1815,7 +1813,6 @@ void cpp_generator::print_function_ptr_helper()
 	      "#include <chrono>\n"
 	      "#include <mutex>\n"
 	      "#include <functional>\n"
-	      "#include <iostream>\n"
 	      "#include <cmath>\n"
 	      "\n"
 	      "template <const size_t _UniqueId, typename _Res, typename... "
