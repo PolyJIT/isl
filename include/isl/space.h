@@ -214,7 +214,7 @@ isl_bool isl_space_tuple_is_equal(__isl_keep isl_space *space1,
 __isl_export
 int isl_space_match(__isl_keep isl_space *dim1, enum isl_dim_type dim1_type,
 	__isl_keep isl_space *dim2, enum isl_dim_type dim2_type);
-__isl_export
+ISL_DEPRECATED
 int isl_space_tuple_match(__isl_keep isl_space *space1, enum isl_dim_type type1,
 	__isl_keep isl_space *space2, enum isl_dim_type type2);
 __isl_export
