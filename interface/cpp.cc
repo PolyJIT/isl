@@ -386,6 +386,11 @@ class cpp_class_printer
 		p_name = type2cpp(name);
 	}
 
+	virtual void print_default_constructor(ostream &os) {
+		print(os, "  {0}() : ctx(Ctx(nullptr)), This(nullptr) {{}}\n",
+		      p_name, base_class);
+	}
+
 	/**
 	 * \brief Print declaration of explicit constructors
 	 *
@@ -460,11 +465,19 @@ class cpp_class_printer
 	 */
 	virtual void print_move_constructor_h(ostream &os)
 	{
-		print(os,
-		      "  {0} ({0} && Other) : ctx(Other.Context()), "
-		      "This(Other.Give())"
-		      " {{}}\n",
-		      p_name, base_class);
+		if (can_copy)
+			print(os,
+			      "  {0} ({0} && Other) : ctx(Other.Context()), "
+			      "This(Other.Give())"
+			      " {{}}\n",
+			      p_name, base_class);
+		else
+			print(os,
+			      "  {0} ({0} && Other) : ctx(Other.Context()), "
+			      "This(Other.This)"
+			      " {{}}\n",
+			      p_name, base_class);
+
 	}
 
 	/**
@@ -757,6 +770,7 @@ class context_class_printer : public cpp_class_printer
 		print(os, "  {0}(const {0} &Other) : {0}(Other.This) {{}}",
 		      p_name);
 	}
+	void print_default_constructor(ostream &os) override {}
 	void print_copy_assignment(ostream &os) override {}
 	void print_copy_assignment_h(ostream &os) override {}
 	void print_move_constructor_h(ostream &os) override {}
@@ -1460,6 +1474,7 @@ void cpp_generator::print_class(isl_class &clazz)
 		print_ptr_wrapper(os, name);
 
 	p->print_explicit_constructors_h(os);
+	p->print_default_constructor(os);
 
 	std::endl(os);
 	print(os, "  const Ctx &Context() const {{ return {0}; }}\n",
