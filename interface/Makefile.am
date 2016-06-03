@@ -61,8 +61,6 @@ ISL_CXX_H=\
 	isl/Aff.hpp \
 	isl/AffList.h \
 	isl/AffList.hpp \
-	isl/AstBuild.h \
-	isl/AstBuild.hpp \
 	isl/AstExpr.h \
 	isl/AstExpr.hpp \
 	isl/AstExprList.h \
@@ -99,8 +97,6 @@ ISL_CXX_H=\
 	isl/Id.hpp \
 	isl/IdList.h \
 	isl/IdList.hpp \
-	isl/IdToAstExpr.h \
-	isl/IdToAstExpr.hpp \
 	isl/IslBase.h \
 	isl/IslException.h \
 	isl/IslFnPtr.h \
@@ -116,8 +112,6 @@ ISL_CXX_H=\
 	isl/MultiPwAff.hpp \
 	isl/Point.h \
 	isl/Point.hpp \
-	isl/Printer.h \
-	isl/Printer.hpp \
 	isl/PwAff.h \
 	isl/PwAff.hpp \
 	isl/PwAffList.h \
