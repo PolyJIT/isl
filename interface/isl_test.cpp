@@ -1,4 +1,5 @@
 #include "isl/Ctx.hpp"
+#include "isl/AstExpr.hpp"
 #include "isl/BasicSet.hpp"
 #include "isl/Set.hpp"
 #include "isl/UnionSet.hpp"
@@ -677,6 +678,52 @@ static int test_conversion(Ctx &C)
 	return 0;
 }
 
+/* Check that negation is printed correctly and that equal expressions
+ * are correctly identified.
+ */
+static int test_ast(Ctx &C)
+{
+	isl_ast_expr *expr, *expr2, *expr3;
+        std::string str;
+	int ok, equal;
+
+        AstExpr expr1 = AstExpr::fromId(Id::alloc(C, "A", nullptr));
+        AstExpr expr2 = AstExpr::fromId(Id::alloc(C, "B", nullptr));
+        AstExpr expr = expr1.add(expr2);
+	expr = expr.neg();
+        expr2 = expr2.neg();
+        equal = expr.isEqual(expr2);
+	str = expr.toStr()
+	ok = str ? !strcmp(str, "-(A + B)") : -1;
+
+	if (ok < 0 || equal < 0)
+		return -1;
+	if (!equal)
+		isl_die(ctx, isl_error_unknown,
+			"equal expressions not considered equal", return -1);
+	if (!ok)
+		isl_die(ctx, isl_error_unknown,
+			"isl_ast_expr printed incorrectly", return -1);
+
+	expr1 = isl_ast_expr_from_id(isl_id_alloc(ctx, "A", NULL));
+	expr2 = isl_ast_expr_from_id(isl_id_alloc(ctx, "B", NULL));
+	expr = isl_ast_expr_add(expr1, expr2);
+	expr3 = isl_ast_expr_from_id(isl_id_alloc(ctx, "C", NULL));
+	expr = isl_ast_expr_sub(expr3, expr);
+	str = isl_ast_expr_to_str(expr);
+	ok = str ? !strcmp(str, "C - (A + B)") : -1;
+	free(str);
+	isl_ast_expr_free(expr);
+
+	if (ok < 0)
+		return -1;
+	if (!ok)
+		isl_die(ctx, isl_error_unknown,
+			"isl_ast_expr printed incorrectly", return -1);
+
+	return 0;
+}
+
 struct {
 	const char *name;
 	int (*fn)(isl::Ctx &C);
@@ -693,6 +740,7 @@ struct {
     {"list", &test_list},
     {"conversion", &test_conversion},
     {"compute divs", &test_compute_divs},
+    {"test_ast", &test_ast}
     //    {"tile", &test_tile},
 };
 
