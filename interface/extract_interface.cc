@@ -395,7 +395,11 @@ int main(int argc, char *argv[])
 	create_preprocessor(Clang);
 	Preprocessor &PP = Clang->getPreprocessor();
 
+#if (CLANG_VERSION_MAJOR == 3) && (CLANG_VERSION_MINOR == 8)
+	PP.getBuiltinInfo().initializeBuiltins(PP.getIdentifierTable(), LO);
+#else
 	PP.getBuiltinInfo().InitializeBuiltins(PP.getIdentifierTable(), LO);
+#endif
 
 	const FileEntry *file = Clang->getFileManager().getFile(InputFilename);
 	assert(file);
