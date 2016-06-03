@@ -462,7 +462,7 @@ class cpp_class_printer
 	{
 		print(os,
 		      "  {0} ({0} && Other) : ctx(Other.Context()), "
-		      "This(Other.This)"
+		      "This(Other.Give())"
 		      " {{}}\n",
 		      p_name, base_class);
 	}
