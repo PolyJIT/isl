@@ -435,6 +435,7 @@ class cpp_class_printer
 
 		print(os, "inline {0} &{0}::operator=(const {0} &Other) {{\n"
 			  "  {1} *New = Other.GetCopy();\n"
+			  "  ctx = Other.Context();\n"
 			  "  {1}_free(({1} *)This);\n"
 			  "  This = New;\n"
 			  "  return *this;\n"
@@ -495,7 +496,8 @@ class cpp_class_printer
 			      name);
 		else
 			print(os, "    std::swap(This, Other.This);\n");
-		print(os, "    return *this;\n"
+		print(os, "    ctx = Other.Context();\n"
+			  "    return *this;\n"
 			  "  }}\n");
 	}
 
@@ -767,12 +769,18 @@ class context_class_printer : public cpp_class_printer
 	}
 
 	void print_copy_constructor_h(ostream &os) override {
-		print(os, "  {0}(const {0} &Other) : {0}(Other.This) {{}}",
+		print(os, "  {0}(const {0} &Other) : This(Other.This) {{}}",
 		      p_name);
 	}
 	void print_default_constructor(ostream &os) override {}
 	void print_copy_assignment(ostream &os) override {}
-	void print_copy_assignment_h(ostream &os) override {}
+	void print_copy_assignment_h(ostream &os) override {
+		print(os, "  {0}&operator=(const {0} &Other) {{\n"
+			  "    This = Other.This;\n"
+			  "    return *this;\n"
+			  "  }}",
+		      p_name);
+	}
 	void print_move_constructor_h(ostream &os) override {}
 	void print_move_assignment_h(ostream &os) override {}
 	void print_api_wrapper(ostream &os) override {}
