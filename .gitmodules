@@ -1,6 +1,6 @@
 [submodule "imath"]
 	path = imath
-	url = https://github.com/creachadair/imath.git
+	url = git@github.com:creachadair/imath.git
 [submodule "interface/cppformat"]
 	path = interface/cppformat
-	url = https://github.com/cppformat/cppformat
+	url = git@github.com:cppformat/cppformat
